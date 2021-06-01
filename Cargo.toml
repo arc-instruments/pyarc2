@@ -1,0 +1,21 @@
+[package]
+name = "pyarc2"
+version = "0.1.0"
+authors = ["Spyros Stathopoulos <spyros@arc-instruments.co.uk>"]
+edition = "2018"
+
+[lib]
+name = "pyarc2"
+crate-type = ["cdylib"]
+
+[dependencies]
+numpy = "0.13"
+ndarray = "0.14"
+libarc2 = { path = "../libarc2" }
+
+[dependencies.pyo3]
+version = "0.13"
+features = ["extension-module"]
+
+[features]
+debug_packets = ["libarc2/debug_packets"]

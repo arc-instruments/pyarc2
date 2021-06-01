@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "pyarc2"
+version = "0.1.0"
+authors = ["Spyros Stathopoulos <spyros@arc-instruments.co.uk>"]
+description = "High level Python bindings for the libarc2 library"
+
+include = ["src/*", "Cargo.toml", "tests/*"]
+exclude = ["pyarc2/*so", "pyarc2/*dll"]
+
+[tool.poetry.dependencies]
+python = ">=3.6"
+pip = "^20.1"
+
+[tool.poetry.dev-dependencies]
+wheel = "*"
+maturin = "==0.9.4"
+
+[build-system]
+requires = ["poetry>=0.12", "setuptools", "wheel", "maturin==0.9.4"]
+build-backend = "maturin"
