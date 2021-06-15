@@ -112,6 +112,34 @@ impl PyInstrument {
         }
     }
 
+    /// pulse_slice(self, chan, voltage, nanos, /)
+    /// --
+    ///
+    /// Apply a pulse to a row or column using `chan` as the low channel with specifid voltage
+    /// and pulse width (in nanoseconds).
+    fn pulse_slice<'py>(mut slf: PyRefMut<'py, Self>, chan: usize, voltage: f32, nanos: u128)
+        -> PyResult<PyRefMut<'py, Self>> {
+
+        match slf._instrument.pulse_slice(chan, voltage, nanos) {
+            Ok(_) => Ok(slf),
+            Err(err) => Err(exceptions::PyException::new_err(err))
+        }
+    }
+
+    /// pulse_all(self, voltage, nanos, order, /)
+    /// --
+    ///
+    /// Pulse all crosspoints in the array, either by high biasing rows (BiasOrder.ROWS) or
+    /// columns (BiasOrder.COLS).
+    fn pulse_all<'py>(mut slf: PyRefMut<'py, Self>, voltage: f32, nanos: u128, order: PyBiasOrder)
+        -> PyResult<PyRefMut<'py, Self>> {
+
+        match slf._instrument.pulse_all(voltage, nanos, order.into()) {
+            Ok(_) => Ok(slf),
+            Err(err) => Err(exceptions::PyException::new_err(err))
+        }
+    }
+
     /// execute(self, /)
     /// --
     ///
