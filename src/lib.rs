@@ -93,7 +93,7 @@ impl PyInstrument {
     /// --
     ///
     /// Read all the available crosspoints at the specified voltage. This can be
-    /// done either by biasing columns (BiasOder.ROWS) or rows (BiasOrder.COLS).
+    /// done either by biasing columns (BiasOrder.ROWS) or rows (BiasOrder.COLS).
     fn read_all<'py>(&mut self, py: Python<'py>, vread: f32, order: PyBiasOrder) -> &'py PyArray<f32, Ix2> {
         self._instrument.read_all_as_ndarray(vread, order.into()).unwrap().into_pyarray(py)
     }
