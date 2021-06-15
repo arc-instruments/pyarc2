@@ -126,6 +126,24 @@ impl PyInstrument {
         }
     }
 
+    /// pulse_slice_masked(self, chan, mask, voltage, nanos, /)
+    /// --
+    ///
+    /// Apply a pulse to a row or column using `chan` as the low channel with specifid voltage
+    /// and pulse width (in nanoseconds) and also limit the high channels to those specified
+    /// by the mask array.
+    fn pulse_slice_masked<'py>(mut slf: PyRefMut<'py, Self>, chan: usize, voltage: f32, nanos: u128, mask: PyReadonlyArray<usize, Ix1>)
+        -> PyResult<PyRefMut<'py, Self>> {
+
+        let actual_mask = mask.as_slice().unwrap();
+
+        match slf._instrument.pulse_slice_masked(chan, actual_mask, voltage, nanos) {
+            Ok(_) => Ok(slf),
+            Err(err) => Err(exceptions::PyException::new_err(err))
+        }
+
+    }
+
     /// pulse_all(self, voltage, nanos, order, /)
     /// --
     ///
