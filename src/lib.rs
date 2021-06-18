@@ -55,6 +55,28 @@ impl PyInstrument {
         }
     }
 
+    /// ground_all(self, /)
+    /// --
+    ///
+    /// Ground all channels.
+    fn ground_all<'py>(mut slf: PyRefMut<'py, Self>) -> PyResult<PyRefMut<'py, Self>> {
+        match slf._instrument.ground_all() {
+            Ok(_) => Ok(slf),
+            Err(err) => Err(exceptions::PyException::new_err(err))
+        }
+    }
+
+    /// float_all(self, /)
+    /// --
+    ///
+    /// Disconnect all channels.
+    fn float_all<'py>(mut slf: PyRefMut<'py, Self>) -> PyResult<PyRefMut<'py, Self>> {
+        match slf._instrument.float_all() {
+            Ok(_) => Ok(slf),
+            Err(err) => Err(exceptions::PyException::new_err(err))
+        }
+    }
+
     /// read_one(self, low, high, vread, /)
     /// --
     ///
