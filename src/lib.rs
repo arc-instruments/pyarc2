@@ -1,4 +1,4 @@
-use libarc2::{Instrument, BiasOrder, find_ids};
+use libarc2::{Instrument, BiasOrder, ControlMode, find_ids};
 use ndarray::{Ix1, Ix2};
 use numpy::{PyArray, PyReadonlyArray};
 use std::convert::{From, Into};
@@ -34,6 +34,37 @@ impl From<BiasOrder> for PyBiasOrder {
 
 impl From<PyBiasOrder> for BiasOrder {
     fn from(order: PyBiasOrder) -> Self {
+        order._inner
+    }
+}
+
+#[pyclass(name="ControlMode", module="pyarc2")]
+#[derive(Clone)]
+struct PyControlMode{ _inner: ControlMode }
+
+#[allow(non_snake_case)]
+#[pymethods]
+impl PyControlMode {
+
+    #[classattr]
+    fn Header() -> PyControlMode {
+        PyControlMode { _inner: ControlMode::Header }
+    }
+
+    #[classattr]
+    fn Internal() -> PyControlMode {
+        PyControlMode { _inner: ControlMode::Internal }
+    }
+}
+
+impl From<ControlMode> for PyControlMode {
+    fn from(order: ControlMode) -> Self {
+        PyControlMode { _inner: order }
+    }
+}
+
+impl From<PyControlMode> for ControlMode {
+    fn from(order: PyControlMode) -> Self {
         order._inner
     }
 }
@@ -208,6 +239,17 @@ impl PyInstrument {
         self._instrument.wait();
     }
 
+    /// set_control_mode(self, mode, /)
+    /// --
+    ///
+    /// Set daughterboard control mode either as Internal or Header
+    fn set_control_mode<'py>(mut slf: PyRefMut<'py, Self>, mode: PyControlMode) -> PyResult<PyRefMut<'py, Self>> {
+        match slf._instrument.set_control_mode(mode.into()) {
+            Ok(_) => Ok(slf),
+            Err(err) => Err(exceptions::PyException::new_err(err))
+        }
+    }
+
 }
 
 #[pymodule]
@@ -228,6 +270,7 @@ fn pyarc2(_: Python, m: &PyModule) -> PyResult<()> {
 
     m.add_class::<PyInstrument>()?;
     m.add_class::<PyBiasOrder>()?;
+    m.add_class::<PyControlMode>()?;
 
     Ok(())
 }
