@@ -89,9 +89,20 @@ impl PyInstrument {
     /// ground_all(self, /)
     /// --
     ///
-    /// Ground all channels.
+    /// Ground all channels and revert them to arbitrary voltage operation.
     fn ground_all<'py>(mut slf: PyRefMut<'py, Self>) -> PyResult<PyRefMut<'py, Self>> {
         match slf._instrument.ground_all() {
+            Ok(_) => Ok(slf),
+            Err(err) => Err(exceptions::PyException::new_err(err))
+        }
+    }
+
+    /// ground_all_fast(self, /)
+    /// --
+    ///
+    /// Ground all channels maintaing current channel operating mode.
+    fn ground_all_fast<'py>(mut slf: PyRefMut<'py, Self>) -> PyResult<PyRefMut<'py, Self>> {
+        match slf._instrument.ground_all_fast() {
             Ok(_) => Ok(slf),
             Err(err) => Err(exceptions::PyException::new_err(err))
         }
