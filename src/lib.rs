@@ -170,7 +170,7 @@ impl PyInstrument {
     fn pulse_one<'py>(mut slf: PyRefMut<'py, Self>, low: usize, high: usize, voltage: f32, nanos: u128)
         -> PyResult<PyRefMut<'py, Self>> {
 
-        match slf._instrument.pulse_one(low, high, voltage, nanos) {
+        match slf._instrument.pulse_one(low, high, voltage, nanos, false) {
             Ok(_) => Ok(slf),
             Err(err) => Err(exceptions::PyException::new_err(err))
         }
@@ -184,7 +184,7 @@ impl PyInstrument {
     fn pulse_slice<'py>(mut slf: PyRefMut<'py, Self>, chan: usize, voltage: f32, nanos: u128)
         -> PyResult<PyRefMut<'py, Self>> {
 
-        match slf._instrument.pulse_slice(chan, voltage, nanos) {
+        match slf._instrument.pulse_slice(chan, voltage, nanos, false) {
             Ok(_) => Ok(slf),
             Err(err) => Err(exceptions::PyException::new_err(err))
         }
@@ -201,7 +201,7 @@ impl PyInstrument {
 
         let actual_mask = mask.as_slice().unwrap();
 
-        match slf._instrument.pulse_slice_masked(chan, actual_mask, voltage, nanos) {
+        match slf._instrument.pulse_slice_masked(chan, actual_mask, voltage, nanos, false) {
             Ok(_) => Ok(slf),
             Err(err) => Err(exceptions::PyException::new_err(err))
         }
@@ -216,7 +216,7 @@ impl PyInstrument {
     fn pulse_all<'py>(mut slf: PyRefMut<'py, Self>, voltage: f32, nanos: u128, order: PyBiasOrder)
         -> PyResult<PyRefMut<'py, Self>> {
 
-        match slf._instrument.pulse_all(voltage, nanos, order.into()) {
+        match slf._instrument.pulse_all(voltage, nanos, order.into(), false) {
             Ok(_) => Ok(slf),
             Err(err) => Err(exceptions::PyException::new_err(err))
         }
