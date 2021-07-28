@@ -1,5 +1,5 @@
 use libarc2::{Instrument, BiasOrder, ControlMode, find_ids};
-use ndarray::{Ix1, Ix2};
+use ndarray::{Ix1, Ix2, Array};
 use numpy::{PyArray, PyReadonlyArray};
 use std::convert::{From, Into};
 use numpy::convert::IntoPyArray;
@@ -246,6 +246,42 @@ impl PyInstrument {
     fn set_control_mode<'py>(mut slf: PyRefMut<'py, Self>, mode: PyControlMode) -> PyResult<PyRefMut<'py, Self>> {
         match slf._instrument.set_control_mode(mode.into()) {
             Ok(_) => Ok(slf),
+            Err(err) => Err(exceptions::PyException::new_err(err))
+        }
+    }
+
+    /// currents_from_address(self, addr, channels, /)
+    /// --
+    ///
+    /// Read current values from specific address segment. This will return all
+    /// the channel values stored in the segment in ascending channel order
+    fn currents_from_address<'py>(&self, py: Python<'py>, addr: u32, chans: PyReadonlyArray<usize, Ix1>) -> PyResult<&'py PyArray<f32, Ix1>> {
+        match self._instrument.currents_from_address(addr, chans.as_slice().unwrap()) {
+            Ok(result) => Ok(Array::from(result).into_pyarray(py)),
+            Err(err) => Err(exceptions::PyException::new_err(err))
+        }
+    }
+
+    /// word_currents_from_address(self, addr, channels, /)
+    /// --
+    ///
+    /// Read all word current values from specific address segment. This will return all
+    /// word-related values stored in the segment in ascending channel order
+    fn word_currents_from_address<'py>(&self, py: Python<'py>, addr: u32) -> PyResult<&'py PyArray<f32, Ix1>> {
+        match self._instrument.word_currents_from_address(addr) {
+            Ok(result) => Ok(Array::from(result).into_pyarray(py)),
+            Err(err) => Err(exceptions::PyException::new_err(err))
+        }
+    }
+
+    /// bit_currents_from_address(self, addr, channels, /)
+    /// --
+    ///
+    /// Read all bit current values from specific address segment. This will return all
+    /// bit-related values stored in the segment in ascending channel order
+    fn bit_currents_from_address<'py>(&self, py: Python<'py>, addr: u32) -> PyResult<&'py PyArray<f32, Ix1>> {
+        match self._instrument.bit_currents_from_address(addr) {
+            Ok(result) => Ok(Array::from(result).into_pyarray(py)),
             Err(err) => Err(exceptions::PyException::new_err(err))
         }
     }
