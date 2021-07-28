@@ -19,3 +19,4 @@ features = ["extension-module"]
 
 [features]
 debug_packets = ["libarc2/debug_packets"]
+zero_before_write = ["libarc2/zero_before_write"]
