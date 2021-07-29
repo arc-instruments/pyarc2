@@ -193,7 +193,7 @@ impl PyInstrument {
     /// pulse_slice_masked(self, chan, mask, voltage, nanos, /)
     /// --
     ///
-    /// Apply a pulse to a row or column using `chan` as the low channel with specifid voltage
+    /// Apply a pulse to a row or column using `chan` as the low channel with specified voltage
     /// and pulse width (in nanoseconds) and also limit the high channels to those specified
     /// by the mask array.
     fn pulse_slice_masked<'py>(mut slf: PyRefMut<'py, Self>, chan: usize, voltage: f32, nanos: u128, mask: PyReadonlyArray<usize, Ix1>)
@@ -221,6 +221,55 @@ impl PyInstrument {
             Err(err) => Err(exceptions::PyException::new_err(err))
         }
     }
+
+    /// pulseread_one(self, low, high, vpulse, nanos, vread, /)
+    /// --
+    ///
+    /// Pulse and then read a crosspoint. Same semantics as ``pulse_one`` and
+    /// ``read_one`` apply.
+    fn pulseread_one(&mut self, low: usize, high: usize, vpulse: f32, nanos: u128, vread: f32) -> f32 {
+        self._instrument.pulseread_one(low, high, vpulse, nanos, vread).unwrap()
+    }
+
+    /// pulseread_slice(self, chan, vpulse, nanos, vread, /)
+    /// --
+    ///
+    /// Pulse and then read a row/column. Same semantics as ``pulse_slice`` and
+    /// ``read_slice`` apply.
+    fn pulseread_slice<'py>(&mut self, py: Python<'py>, chan: usize, vpulse: f32,
+        nanos: u128, vread: f32) -> &'py PyArray<f32, Ix1> {
+        self._instrument.pulseread_slice_as_ndarray(chan, vpulse, nanos, vread)
+            .unwrap().into_pyarray(py)
+    }
+
+    /// pulseread_slice_masked(self, chan, mask, vpulse, nanos, vread, /)
+    /// --
+    ///
+    /// Pulse and read specified high channels that have `chan` as low potential
+    /// channel. Same semantics as ``pulse_slice_masked`` and ``read_slice_masked``
+    /// apply.
+    fn pulseread_slice_masked<'py>(&mut self, py: Python<'py>, chan: usize,
+        mask: PyReadonlyArray<usize, Ix1>, vpulse: f32, nanos: u128,
+        vread: f32) -> &'py PyArray<f32, Ix1> {
+
+        let slice = mask.as_slice().unwrap();
+        self._instrument.pulseread_slice_masked_as_ndarray(chan, slice, vpulse, nanos, vread)
+            .unwrap()
+            .into_pyarray(py)
+    }
+
+    /// pulseread_all(self, vpulse, nanos, vread, order, /)
+    /// --
+    ///
+    /// Pulse and read all the crosspoints. Same semantics as ``pulse_all`` and ``read_all``
+    /// apply here as well
+    fn pulseread_all<'py>(&mut self, py: Python<'py>, vpulse: f32, nanos: u128,
+        vread: f32, order: PyBiasOrder) -> &'py PyArray<f32, Ix2> {
+
+        self._instrument.pulseread_all_as_ndarray(vpulse, nanos, vread, order.into())
+            .unwrap().into_pyarray(py)
+    }
+
 
     /// execute(self, /)
     /// --
