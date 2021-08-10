@@ -1,9 +1,10 @@
-use libarc2::{Instrument, BiasOrder, ControlMode, find_ids};
+use libarc2::{Instrument, BiasOrder, ControlMode, DataMode, ReadAt, ReadAfter, find_ids};
 use ndarray::{Ix1, Ix2, Array};
 use numpy::{PyArray, PyReadonlyArray};
 use std::convert::{From, Into};
 use numpy::convert::IntoPyArray;
-use pyo3::prelude::{pymodule, pyclass, pymethods, PyModule, PyRefMut, PyResult, Python};
+use pyo3::prelude::{pymodule, pyclass, pymethods};
+use pyo3::prelude::{PyModule, PyRefMut, PyResult, Python};
 use pyo3::exceptions;
 
 
@@ -38,6 +39,90 @@ impl From<PyBiasOrder> for BiasOrder {
     }
 }
 
+#[pyclass(name="ReadAt", module="pyarc2")]
+#[derive(Clone)]
+struct PyReadAt { _inner: ReadAt }
+
+#[allow(non_snake_case)]
+#[pymethods]
+impl PyReadAt {
+
+    #[classattr]
+    fn Bias() -> PyReadAt {
+        PyReadAt { _inner: ReadAt::Bias }
+    }
+
+    #[staticmethod]
+    fn Arb(voltage: f32) -> PyReadAt {
+        PyReadAt { _inner: ReadAt::Arb(voltage) }
+    }
+
+    #[classattr]
+    fn Never() -> PyReadAt {
+        PyReadAt { _inner: ReadAt::Never }
+    }
+
+    fn voltage(&self) -> PyResult<f32> {
+        match self._inner {
+            ReadAt::Arb(v) => Ok(v),
+            _ => Err(exceptions::PyException::new_err("No voltage associated"))
+        }
+    }
+}
+
+impl From<ReadAt> for PyReadAt {
+    fn from(readat: ReadAt) -> Self {
+        PyReadAt { _inner: readat }
+    }
+}
+
+impl From<PyReadAt> for ReadAt {
+    fn from(readat: PyReadAt) -> Self {
+        readat._inner
+    }
+}
+
+#[pyclass(name="ReadAfter", module="pyarc2")]
+#[derive(Clone)]
+struct PyReadAfter { _inner: ReadAfter }
+
+#[allow(non_snake_case)]
+#[pymethods]
+impl PyReadAfter {
+
+    #[classattr]
+    fn Pulse() -> PyReadAfter {
+        PyReadAfter { _inner: ReadAfter::Pulse }
+    }
+
+    #[classattr]
+    fn Ramp() -> PyReadAfter {
+        PyReadAfter { _inner: ReadAfter::Ramp }
+    }
+
+    #[classattr]
+    fn Block() -> PyReadAfter {
+        PyReadAfter { _inner: ReadAfter::Ramp }
+    }
+
+    #[classattr]
+    fn Never() -> PyReadAfter {
+        PyReadAfter { _inner: ReadAfter::Never }
+    }
+}
+
+impl From<ReadAfter> for PyReadAfter {
+    fn from(readafter: ReadAfter) -> Self {
+        PyReadAfter { _inner: readafter }
+    }
+}
+
+impl From<PyReadAfter> for ReadAfter {
+    fn from(readafter: PyReadAfter) -> Self {
+        readafter._inner
+    }
+}
+
 #[pyclass(name="ControlMode", module="pyarc2")]
 #[derive(Clone)]
 struct PyControlMode{ _inner: ControlMode }
@@ -69,8 +154,43 @@ impl From<PyControlMode> for ControlMode {
     }
 }
 
+#[pyclass(name="DataMode", module="pyarc2")]
+#[derive(Clone)]
+struct PyDataMode { _inner: DataMode }
 
-#[pyclass(name="Instrument", module="pyarc2")]
+#[allow(non_snake_case)]
+#[pymethods]
+impl PyDataMode {
+
+    #[classattr]
+    fn Words() -> PyDataMode {
+        PyDataMode { _inner: DataMode::Words }
+    }
+
+    #[classattr]
+    fn Bits() -> PyDataMode {
+        PyDataMode { _inner: DataMode::Bits }
+    }
+
+    #[classattr]
+    fn All() -> PyDataMode {
+        PyDataMode { _inner: DataMode::All }
+    }
+}
+
+impl From<DataMode> for PyDataMode {
+    fn from(mode: DataMode) -> Self {
+        PyDataMode { _inner: mode }
+    }
+}
+
+impl From<PyDataMode> for DataMode {
+    fn from(mode: PyDataMode) -> Self {
+        mode._inner
+    }
+}
+
+#[pyclass(name="Instrument", module="pyarc2", subclass)]
 struct PyInstrument {
     _instrument: Instrument
 }
@@ -346,6 +466,52 @@ impl PyInstrument {
         }
     }
 
+
+    /// generate_ramp(self, low, high, vstart, vstep, vstop, pw, inter, npulse, readat, readafter,
+    /// /)
+    /// --
+    ///
+    /// Initiate a ramp operation in ArC2. This will spawn a background process that bias
+    /// the selected `low` and `high` channels based on the parameters specified.
+    fn generate_ramp<'py>(mut slf: PyRefMut<'py, Self>, low: usize, high: usize,
+        vstart: f32, vstep: f32, vstop: f32,
+        pw_nanos: u128, inter_nanos: u128, num_pulses: usize,
+        read_at: PyReadAt, read_after: PyReadAfter) -> PyResult<PyRefMut<'py, Self>> {
+
+        match slf._instrument.generate_ramp(low, high, vstart, vstep, vstop,
+            pw_nanos, inter_nanos, num_pulses, read_at.into(),
+            read_after.into()) {
+            Ok(_) => Ok(slf),
+            Err(err) => Err(exceptions::PyException::new_err(err))
+        }
+
+    }
+
+    /// pick_one(self, mode, /)
+    /// --
+    ///
+    /// Read a slab of data from the internal long operation buffer. This clears
+    /// the memory area after reading.
+    fn pick_one<'py>(&mut self, py: Python<'py>, mode: PyDataMode) ->
+        PyResult<Option<&'py PyArray<f32, Ix1>>> {
+
+        let mode: DataMode = mode.into();
+
+        match self._instrument.pick_one(mode) {
+            Ok(data_opt) => {
+                match data_opt {
+                    Some(data) => {
+                        let array = Array::from(data).into_pyarray(py);
+                        Ok(Some(array))
+                    },
+                    None => Ok(None)
+                }
+            },
+            Err(err) => Err(exceptions::PyException::new_err(err))
+        }
+
+    }
+
 }
 
 #[pymodule]
@@ -356,7 +522,8 @@ fn pyarc2(_: Python, m: &PyModule) -> PyResult<()> {
     ///
     /// Find all available ArC2 devices. This will return a list
     /// with all discovered ids.
-    #[pyfn(m, "find_ids")]
+    #[pyfn(m)]
+    #[pyo3(name="find_ids")]
     fn py_find_ids(_py: Python) -> PyResult<Vec<i32>> {
         match find_ids() {
             Ok(ids) => { Ok(ids) },
@@ -367,6 +534,9 @@ fn pyarc2(_: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyInstrument>()?;
     m.add_class::<PyBiasOrder>()?;
     m.add_class::<PyControlMode>()?;
+    m.add_class::<PyDataMode>()?;
+    m.add_class::<PyReadAt>()?;
+    m.add_class::<PyReadAfter>()?;
 
     Ok(())
 }
