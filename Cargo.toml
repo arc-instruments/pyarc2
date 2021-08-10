@@ -9,12 +9,12 @@ name = "pyarc2"
 crate-type = ["cdylib"]
 
 [dependencies]
-numpy = "0.13"
-ndarray = "0.14"
+numpy = "0.14"
+ndarray = "0.15"
 libarc2 = { path = "../libarc2" }
 
 [dependencies.pyo3]
-version = "0.13"
+version = "0.14"
 features = ["extension-module"]
 
 [features]
