@@ -3,6 +3,13 @@ from .pyarc2 import BiasOrder, ControlMode, DataMode
 from .pyarc2 import ReadAt, ReadAfter
 
 from functools import partial
+from enum import Enum
+
+
+class IdleMode(Enum):
+    Float: int = 0b01
+    Gnd: int = 0b10
+
 
 class Instrument(InstrumentLL):
 
@@ -18,3 +25,9 @@ class Instrument(InstrumentLL):
     def get_iter(self, mode):
         fn = partial(self._array_iter_inner, mode)
         return iter(fn, None)
+
+    def finalise_operation(self, mode):
+        if mode == IdleMode.Float:
+            self.ground_all_fast().float_all().execute()
+        elif mode == IdleMode.Gnd:
+            self.ground_all().execute()
