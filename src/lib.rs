@@ -102,7 +102,7 @@ impl PyReadAfter {
 
     #[classattr]
     fn Block() -> PyReadAfter {
-        PyReadAfter { _inner: ReadAfter::Ramp }
+        PyReadAfter { _inner: ReadAfter::Block }
     }
 
     #[classattr]
