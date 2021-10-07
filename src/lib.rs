@@ -191,10 +191,22 @@ impl From<PyDataMode> for DataMode {
 }
 
 #[pyclass(name="Instrument", module="pyarc2", subclass)]
-struct PyInstrument {
+pub struct PyInstrument {
     _instrument: Instrument
 }
 
+impl PyInstrument {
+
+    /// Returns a reference to the underlying Instrument
+    pub fn inner(&self) -> &Instrument {
+        &self._instrument
+    }
+
+    /// Returns a mutable reference to the underlying Instrument
+    pub fn inner_mut(&mut self) -> &mut Instrument {
+        &mut self._instrument
+    }
+}
 
 #[pymethods]
 impl PyInstrument {
