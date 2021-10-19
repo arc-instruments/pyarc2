@@ -15,10 +15,9 @@ curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain stable -y
 
 export PATH="${HOME}/.cargo/bin:${PATH}"
 
-mkdir -p /io/dist
 cd /io/pyarc2
 
-for PYBIN in /opt/python/cp{36,37,38,39}*/bin; do
+for PYBIN in /opt/python/cp{38,39,310}*/bin; do
     PYEXEC="${PYBIN}/python"
     PIPEXEC="${PYBIN}/pip"
     "${PIPEXEC}" install -U poetry
@@ -35,9 +34,6 @@ for PYBIN in /opt/python/cp{36,37,38,39}*/bin; do
             --no-sdist --manylinux off
 done
 
-# pick up the source distribution
-mv /io/pyarc2/dist/*tar.gz /io/dist
-
-for whl in /io/target/wheels/*.whl; do
+for whl in /io/pyarc2/target/wheels/*.whl; do
     auditwheel repair "$whl" -w /io/dist/
 done
