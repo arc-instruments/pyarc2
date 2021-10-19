@@ -5,7 +5,7 @@ authors = ["Spyros Stathopoulos <spyros@arc-instruments.co.uk>"]
 description = "High level Python bindings for the libarc2 library"
 
 include = ["src/*", "Cargo.toml", "tests/*"]
-exclude = ["pyarc2/*so", "pyarc2/*dll"]
+exclude = ["pyarc2/*so", "pyarc2/*dll", "pyarc2/*pyd"]
 
 [tool.poetry.dependencies]
 python = ">=3.7"
