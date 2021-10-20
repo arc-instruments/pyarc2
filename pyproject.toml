@@ -1,15 +1,44 @@
 [tool.poetry]
 name = "pyarc2"
 version = "0.1.0"
-authors = ["Spyros Stathopoulos <spyros@arc-instruments.co.uk>"]
 description = "High level Python bindings for the libarc2 library"
+authors = ["Spyros Stathopoulos <spyros@arc-instruments.co.uk>"]
 
-include = ["src/*", "Cargo.toml", "tests/*"]
-exclude = ["pyarc2/*so", "pyarc2/*dll", "pyarc2/*pyd"]
+#include = ["src/*", "Cargo.toml", "tests/*"]
+#exclude = ["pyarc2/*so", "pyarc2/*dll", "pyarc2/*pyd"]
+
+[project]
+name = "pyarc2"
+version = "0.1.0"
+description = "High level Python bindings for the libarc2 library"
+readme = "README.md"
+authors = [
+  { name = "Spyros Stathopoulos <spyros@arc-instruments.co.uk>"},
+  { email = "spyros@arc-instruments.co.uk" }
+]
+homepage = "http://arc-instruments.co.uk/"
+repository = "https://github.com/arc-instruments/pyarc2"
+license = { text = "LPGLv2" }
+
+requires-python = ">=3.7"
+
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: GNU Lesser General Public License v2 (LGPLv2)",
+  "Operating System :: Microsoft :: Windows :: Windows 8",
+  "Operating System :: Microsoft :: Windows :: Windows 8.1",
+  "Operating System :: Microsoft :: Windows :: Windows 10",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Rust",
+  "Topic :: Scientific/Engineering",
+  "Topic :: Software Development :: Libraries :: Python Modules"
+]
 
 [tool.poetry.dependencies]
 python = ">=3.7"
-pip = "^20.1"
 
 [tool.poetry.dev-dependencies]
 wheel = "*"
@@ -17,5 +46,5 @@ maturin = "^0.11"
 delvewheel = [{ version = "^0.0.15", platform = 'win32' }]
 
 [build-system]
-requires = ["poetry-core>=1.0.1", "setuptools", "wheel", "maturin>=0.11"]
+requires = ["setuptools", "wheel", "maturin>=0.11"]
 build-backend = "maturin"
