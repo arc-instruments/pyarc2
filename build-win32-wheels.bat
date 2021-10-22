@@ -1,5 +1,7 @@
 @echo off
 
+python -m poetry install
+python -m poetry update
 python -m poetry run maturin build --release
 
 IF %ERRORLEVEL% NEQ 0 (
