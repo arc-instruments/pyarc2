@@ -17,7 +17,7 @@ export PATH="${HOME}/.cargo/bin:${PATH}"
 
 cd /io/pyarc2
 
-for PYBIN in /opt/python/cp{38,39,310}*/bin; do
+for PYBIN in /opt/python/cp{37,38,39,310}*/bin; do
     PYEXEC="${PYBIN}/python"
     PIPEXEC="${PYBIN}/pip"
     "${PIPEXEC}" install -U poetry
