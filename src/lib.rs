@@ -3,8 +3,9 @@ use ndarray::{Ix1, Ix2, Array};
 use numpy::{PyArray, PyReadonlyArray};
 use std::convert::{From, Into};
 use numpy::convert::IntoPyArray;
-use pyo3::prelude::{pymodule, pyclass, pymethods};
+use pyo3::prelude::{pymodule, pyclass, pymethods, pyproto};
 use pyo3::prelude::{PyModule, PyRefMut, PyResult, Python};
+use pyo3::class::basic::{PyObjectProtocol};
 use pyo3::exceptions;
 
 
@@ -109,6 +110,48 @@ impl PyReadAfter {
     fn Never() -> PyReadAfter {
         PyReadAfter { _inner: ReadAfter::Never }
     }
+
+    #[staticmethod]
+    fn from_str(r: &str) -> PyResult<PyReadAfter> {
+
+        match r {
+            "pulse" => Ok(PyReadAfter::Pulse()),
+            "ramp" => Ok(PyReadAfter::Ramp()),
+            "block" => Ok(PyReadAfter::Block()),
+            "never" => Ok(PyReadAfter::Never()),
+            _ => Err(exceptions::PyValueError::new_err("Unknown ReadAfter"))
+        }
+    }
+}
+
+#[pyproto]
+impl<'p> PyObjectProtocol for PyReadAfter {
+
+    fn __str__(&self) -> PyResult<&str> {
+
+        let inner = &self._inner;
+
+        match inner {
+            ReadAfter::Pulse => Ok("pulse"),
+            ReadAfter::Ramp => Ok("ramp"),
+            ReadAfter::Block => Ok("block"),
+            ReadAfter::Never => Ok("never")
+        }
+    }
+
+    fn __repr__(&self) -> PyResult<&str> {
+
+        let inner = &self._inner;
+
+        match inner {
+            ReadAfter::Pulse => Ok("ReadAfter<Pulse>"),
+            ReadAfter::Ramp => Ok("ReadAfter<Ramp>"),
+            ReadAfter::Block => Ok("ReadAfter<Block>"),
+            ReadAfter::Never => Ok("ReadAfter<Never>")
+        }
+
+    }
+
 }
 
 impl From<ReadAfter> for PyReadAfter {
