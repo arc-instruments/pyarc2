@@ -1,7 +1,7 @@
 from .pyarc2 import Instrument as InstrumentLL
 from .pyarc2 import BiasOrder, ControlMode, DataMode
 from .pyarc2 import ReadAt, ReadAfter
-from .pyarc2 import find_ids
+from .pyarc2 import find_ids, ArC2Error
 
 from functools import partial
 from enum import Enum

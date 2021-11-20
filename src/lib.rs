@@ -1,10 +1,12 @@
 use libarc2::{Instrument, BiasOrder, ControlMode, DataMode, ReadAt, ReadAfter, find_ids};
+use libarc2::ArC2Error as LLArC2Error;
 use ndarray::{Ix1, Ix2, Array};
 use numpy::{PyArray, PyReadonlyArray};
 use std::convert::{From, Into};
 use numpy::convert::IntoPyArray;
 use pyo3::prelude::{pymodule, pyclass, pymethods, pyproto};
-use pyo3::prelude::{PyModule, PyRefMut, PyResult, Python};
+use pyo3::prelude::{PyModule, PyRefMut, PyResult, Python, PyErr};
+use pyo3::create_exception;
 use pyo3::class::basic::{PyObjectProtocol};
 use pyo3::exceptions;
 
@@ -233,6 +235,40 @@ impl From<PyDataMode> for DataMode {
     }
 }
 
+
+#[pyclass(name="ArC2ErrorWrapper", module="pyarc2")]
+struct PyArC2Error { _inner: LLArC2Error }
+
+#[pyproto]
+impl<'p> PyObjectProtocol for PyArC2Error {
+
+    fn __str__(&self) -> PyResult<String> {
+        let inner = &self._inner;
+        Ok(format!("{}", inner))
+    }
+
+}
+
+impl From<LLArC2Error> for PyArC2Error {
+    fn from(err: LLArC2Error) -> Self {
+        PyArC2Error { _inner: err }
+    }
+}
+
+impl From<PyArC2Error> for LLArC2Error {
+    fn from(err: PyArC2Error) -> Self {
+        err._inner
+    }
+}
+
+create_exception!(pyarc2, ArC2Error, exceptions::PyException);
+
+impl ArC2Error {
+    fn new_exception(err: LLArC2Error) -> PyErr {
+        ArC2Error::new_err(PyArC2Error { _inner: err })
+    }
+}
+
 #[pyclass(name="Instrument", module="pyarc2", subclass)]
 pub struct PyInstrument {
     _instrument: Instrument
@@ -257,7 +293,7 @@ impl PyInstrument {
     fn new(id: i32, fw: &str) -> PyResult<Self> {
         match Instrument::open_with_fw(id, fw, true) {
             Ok(instr) => Ok(PyInstrument { _instrument: instr }),
-            Err(err) => Err(exceptions::PyException::new_err(err))
+            Err(err) => Err(ArC2Error::new_exception(err))
         }
     }
 
@@ -268,7 +304,7 @@ impl PyInstrument {
     fn ground_all<'py>(mut slf: PyRefMut<'py, Self>) -> PyResult<PyRefMut<'py, Self>> {
         match slf._instrument.ground_all() {
             Ok(_) => Ok(slf),
-            Err(err) => Err(exceptions::PyException::new_err(err))
+            Err(err) => Err(ArC2Error::new_exception(err))
         }
     }
 
@@ -279,7 +315,7 @@ impl PyInstrument {
     fn ground_all_fast<'py>(mut slf: PyRefMut<'py, Self>) -> PyResult<PyRefMut<'py, Self>> {
         match slf._instrument.ground_all_fast() {
             Ok(_) => Ok(slf),
-            Err(err) => Err(exceptions::PyException::new_err(err))
+            Err(err) => Err(ArC2Error::new_exception(err))
         }
     }
 
@@ -290,7 +326,7 @@ impl PyInstrument {
     fn float_all<'py>(mut slf: PyRefMut<'py, Self>) -> PyResult<PyRefMut<'py, Self>> {
         match slf._instrument.float_all() {
             Ok(_) => Ok(slf),
-            Err(err) => Err(exceptions::PyException::new_err(err))
+            Err(err) => Err(ArC2Error::new_exception(err))
         }
     }
 
@@ -347,7 +383,7 @@ impl PyInstrument {
 
         match slf._instrument.pulse_one(low, high, voltage, nanos, true) {
             Ok(_) => Ok(slf),
-            Err(err) => Err(exceptions::PyException::new_err(err))
+            Err(err) => Err(ArC2Error::new_exception(err))
         }
     }
 
@@ -361,7 +397,7 @@ impl PyInstrument {
 
         match slf._instrument.pulse_slice(chan, voltage, nanos, true) {
             Ok(_) => Ok(slf),
-            Err(err) => Err(exceptions::PyException::new_err(err))
+            Err(err) => Err(ArC2Error::new_exception(err))
         }
     }
 
@@ -378,7 +414,7 @@ impl PyInstrument {
 
         match slf._instrument.pulse_slice_masked(chan, actual_mask, voltage, nanos, true) {
             Ok(_) => Ok(slf),
-            Err(err) => Err(exceptions::PyException::new_err(err))
+            Err(err) => Err(ArC2Error::new_exception(err))
         }
 
     }
@@ -393,7 +429,7 @@ impl PyInstrument {
 
         match slf._instrument.pulse_all(voltage, nanos, order.into(), true) {
             Ok(_) => Ok(slf),
-            Err(err) => Err(exceptions::PyException::new_err(err))
+            Err(err) => Err(ArC2Error::new_exception(err))
         }
     }
 
@@ -454,7 +490,7 @@ impl PyInstrument {
     fn execute<'py>(mut slf: PyRefMut<'py, Self>) -> PyResult<PyRefMut<'py, Self>> {
         match slf._instrument.execute() {
             Ok(_) => Ok(slf),
-            Err(err) => Err(exceptions::PyException::new_err(err))
+            Err(err) => Err(ArC2Error::new_exception(err))
         }
     }
 
@@ -481,7 +517,7 @@ impl PyInstrument {
     fn set_control_mode<'py>(mut slf: PyRefMut<'py, Self>, mode: PyControlMode) -> PyResult<PyRefMut<'py, Self>> {
         match slf._instrument.set_control_mode(mode.into()) {
             Ok(_) => Ok(slf),
-            Err(err) => Err(exceptions::PyException::new_err(err))
+            Err(err) => Err(ArC2Error::new_exception(err))
         }
     }
 
@@ -493,7 +529,7 @@ impl PyInstrument {
     fn currents_from_address<'py>(&self, py: Python<'py>, addr: u32, chans: PyReadonlyArray<usize, Ix1>) -> PyResult<&'py PyArray<f32, Ix1>> {
         match self._instrument.currents_from_address(addr, chans.as_slice().unwrap()) {
             Ok(result) => Ok(Array::from(result).into_pyarray(py)),
-            Err(err) => Err(exceptions::PyException::new_err(err))
+            Err(err) => Err(ArC2Error::new_exception(err))
         }
     }
 
@@ -505,7 +541,7 @@ impl PyInstrument {
     fn word_currents_from_address<'py>(&self, py: Python<'py>, addr: u32) -> PyResult<&'py PyArray<f32, Ix1>> {
         match self._instrument.word_currents_from_address(addr) {
             Ok(result) => Ok(Array::from(result).into_pyarray(py)),
-            Err(err) => Err(exceptions::PyException::new_err(err))
+            Err(err) => Err(ArC2Error::new_exception(err))
         }
     }
 
@@ -517,7 +553,7 @@ impl PyInstrument {
     fn bit_currents_from_address<'py>(&self, py: Python<'py>, addr: u32) -> PyResult<&'py PyArray<f32, Ix1>> {
         match self._instrument.bit_currents_from_address(addr) {
             Ok(result) => Ok(Array::from(result).into_pyarray(py)),
-            Err(err) => Err(exceptions::PyException::new_err(err))
+            Err(err) => Err(ArC2Error::new_exception(err))
         }
     }
 
@@ -537,7 +573,7 @@ impl PyInstrument {
             pw_nanos, inter_nanos, num_pulses, read_at.into(),
             read_after.into()) {
             Ok(_) => Ok(slf),
-            Err(err) => Err(exceptions::PyException::new_err(err))
+            Err(err) => Err(ArC2Error::new_exception(err))
         }
 
     }
@@ -562,7 +598,7 @@ impl PyInstrument {
                     None => Ok(None)
                 }
             },
-            Err(err) => Err(exceptions::PyException::new_err(err))
+            Err(err) => Err(ArC2Error::new_exception(err))
         }
 
     }
@@ -570,7 +606,7 @@ impl PyInstrument {
 }
 
 #[pymodule]
-fn pyarc2(_: Python, m: &PyModule) -> PyResult<()> {
+fn pyarc2(py: Python, m: &PyModule) -> PyResult<()> {
 
     /// find_ids()
     /// --
@@ -582,7 +618,7 @@ fn pyarc2(_: Python, m: &PyModule) -> PyResult<()> {
     fn py_find_ids(_py: Python) -> PyResult<Vec<i32>> {
         match find_ids() {
             Ok(ids) => { Ok(ids) },
-            Err(err) => { Err(exceptions::PyException::new_err(err)) }
+            Err(err) => { Err(ArC2Error::new_exception(err)) }
         }
     }
 
@@ -592,6 +628,7 @@ fn pyarc2(_: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyDataMode>()?;
     m.add_class::<PyReadAt>()?;
     m.add_class::<PyReadAfter>()?;
+    m.add("ArC2Error", py.get_type::<ArC2Error>())?;
 
     Ok(())
 }
