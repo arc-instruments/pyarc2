@@ -33,5 +33,6 @@ version = "0.14"
 features = ["extension-module"]
 
 [features]
+flag_addresses = ["libarc2/flag_addresses"]
 debug_packets = ["libarc2/debug_packets"]
 zero_before_write = ["libarc2/zero_before_write"]
