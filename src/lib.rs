@@ -11,6 +11,10 @@ use pyo3::class::basic::{PyObjectProtocol};
 use pyo3::exceptions;
 
 
+/// BiasOrder is used in combination with the multi-crosspoint pulse and
+/// read operations of ArC2 (`Instrument.pulseread_all`, `Instrument.pulse_all`
+/// and `Instrument.read_all`) and marks the order of biasing, either column-wise
+/// or row-wise.
 #[pyclass(name="BiasOrder", module="pyarc2")]
 #[derive(Clone)]
 struct PyBiasOrder{ _inner: BiasOrder }
@@ -42,6 +46,11 @@ impl From<PyBiasOrder> for BiasOrder {
     }
 }
 
+/// ReadAt is used with ramp operations of ArC2 (`Instrument.generate_ramp`)
+/// and it signifies at what voltage should read-outs be done when requested.
+/// This can be either at `Bias` (current ramp voltage), arbitrary voltage
+/// `ReadAt.Arb(voltage)` or `Never` if no read-outs are requested. The
+/// latter also implies `ReadAfter.Never`.
 #[pyclass(name="ReadAt", module="pyarc2")]
 #[derive(Clone)]
 struct PyReadAt { _inner: ReadAt }
@@ -55,6 +64,10 @@ impl PyReadAt {
         PyReadAt { _inner: ReadAt::Bias }
     }
 
+    /// Arb(self, voltage, /)
+    /// --
+    ///
+    /// Do read-outs at arbitrary voltage.
     #[staticmethod]
     fn Arb(voltage: f32) -> PyReadAt {
         PyReadAt { _inner: ReadAt::Arb(voltage) }
@@ -65,6 +78,11 @@ impl PyReadAt {
         PyReadAt { _inner: ReadAt::Never }
     }
 
+    /// voltage(self, /)
+    /// --
+    ///
+    /// Get the current voltage for this operation if this object was
+    /// created with `ReadAt.Arb`. It will raise an exception otherwise.
     fn voltage(&self) -> PyResult<f32> {
         match self._inner {
             ReadAt::Arb(v) => Ok(v),
@@ -85,6 +103,11 @@ impl From<PyReadAt> for ReadAt {
     }
 }
 
+/// ReadAfter is used with ramp operations of ArC2 (`Instrument.generate_ramp`)
+/// and it signifies at when should read-outs be done. This can be either
+/// after a biasing pulse (`Pulse`), after a block of biasing pulses (if more
+/// that one, `Block`), at the end of the Ramp (`Ramp`) or never (`Never`).
+/// The last option also implies `ReadAt.Never`.
 #[pyclass(name="ReadAfter", module="pyarc2")]
 #[derive(Clone)]
 struct PyReadAfter { _inner: ReadAfter }
@@ -113,6 +136,12 @@ impl PyReadAfter {
         PyReadAfter { _inner: ReadAfter::Never }
     }
 
+    /// from_str(r, /)
+    /// --
+    ///
+    /// Generate a `ReadAfter` object from a string value. Available
+    /// options are "pulse", "ramp", "block", "never". A ValueError will
+    /// be thrown otherwise.
     #[staticmethod]
     fn from_str(r: &str) -> PyResult<PyReadAfter> {
 
@@ -168,6 +197,13 @@ impl From<PyReadAfter> for ReadAfter {
     }
 }
 
+/// ControlMode is used in combination with `Instrument.set_control_mode`
+/// to switch the daughterboard operation mode. If it's `Header` then
+/// connections are redirected to the header pins on the daughterboard
+/// whereas if `Internal` then routing will be done internally. The first
+/// option is typical when devices are connected to an external interfacing
+/// system such as a probe card or manipulator. The latter is typically used
+/// with on-board packages.
 #[pyclass(name="ControlMode", module="pyarc2")]
 #[derive(Clone)]
 struct PyControlMode{ _inner: ControlMode }
@@ -199,6 +235,10 @@ impl From<PyControlMode> for ControlMode {
     }
 }
 
+/// DataMode is used to signify the retrieval mode of values
+/// from ArC2 memory. Typically this is used with `Instrument.pick_one`
+/// to read values from memory. If `Words`/`Bits` is selected only
+/// wordlines/bitlines will be returned. Use `All` to return all values.
 #[pyclass(name="DataMode", module="pyarc2")]
 #[derive(Clone)]
 struct PyDataMode { _inner: DataMode }
