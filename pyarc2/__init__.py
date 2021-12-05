@@ -3,6 +3,7 @@ from .pyarc2 import BiasOrder, ControlMode, DataMode
 from .pyarc2 import ReadAt, ReadAfter, ArC2Error
 from .pyarc2 import find_ids as _find_ids
 
+from dataclasses import dataclass
 from functools import partial
 from enum import Enum
 
@@ -22,6 +23,15 @@ class IdleMode(Enum):
 
     Float: int = 0b01
     Gnd: int = 0b10
+
+
+@dataclass
+class ArC2Config:
+    """
+    Convenience dataclass to group ArC2 configuration options.
+    """
+    idleMode: IdleMode
+    controlMode: ControlMode
 
 
 class Instrument(__InstrumentLL):
