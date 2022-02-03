@@ -653,6 +653,10 @@ fn pyarc2(py: Python, m: &PyModule) -> PyResult<()> {
     ///
     /// Find all available ArC2 devices. This will return a list
     /// with all discovered ids.
+    ///
+    /// >>> from pyarc2 import find_ids
+    /// >>> ids = find_ids()
+    /// >>> # returns: [0, 1]
     #[pyfn(m)]
     #[pyo3(name="find_ids")]
     fn py_find_ids(_py: Python) -> PyResult<Vec<i32>> {
