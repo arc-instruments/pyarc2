@@ -70,18 +70,31 @@ class Instrument(__InstrumentLL):
         fn = partial(self._array_iter_inner, mode)
         return iter(fn, None)
 
-    def finalise_operation(self, mode):
+    def finalise_operation(self, mode=None, control=None):
         """
-        This function is used to safely reset channels at the end of
-        an operation. The available options are outlined in `IdleMode`.
-        Please note that floating the channels will disconnect them
-        and leave them in the configuration they were before. For instance
-        at the end of a fast operation (fast pulses, fast ramps, etc) the
-        channels will still be left in a High Speed driver mode. However
-        explicitly grounding the devices will switch them to arbitrary
-        voltage (incurring the 120 μs penalty to do so).
+        This function is used to safely reset channels and daughterboard
+        control at the end of an operation. The available options are outlined
+        in `IdleMode` and `ControlMode`.  Please note that floating the
+        channels will disconnect them and leave them in the configuration they
+        were before. For instance at the end of a fast operation (fast pulses,
+        fast ramps, etc) the channels will still be left in a High Speed driver
+        mode. However explicitly grounding the devices will switch them to
+        arbitrary voltage (incurring the 120 μs penalty to do so). Setting any
+        of the two arguments as `None` will retain existing configuration.
         """
+
         if mode == IdleMode.Float:
             self.ground_all_fast().float_all().execute()
         elif mode == IdleMode.Gnd:
             self.ground_all().execute()
+        elif mode is None:
+            pass
+        else:
+            raise ArC2Error("Invalid idle mode")
+
+        if control == ControlMode.Header or control == ControlMode.Internal:
+            self.set_control_mode(control)
+        elif control is None:
+            pass
+        else:
+            raise ArC2Error("Invalid control mode")
