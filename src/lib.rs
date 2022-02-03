@@ -1,5 +1,6 @@
 use libarc2::{Instrument, BiasOrder, ControlMode, DataMode, ReadAt, ReadAfter, find_ids};
 use libarc2::ArC2Error as LLArC2Error;
+use libarc2::registers::IOMask;
 use ndarray::{Ix1, Ix2, Array};
 use numpy::{PyArray, PyReadonlyArray};
 use std::convert::{From, Into};
@@ -556,6 +557,20 @@ impl PyInstrument {
     /// Set daughterboard control mode either as Internal or Header
     fn set_control_mode<'py>(mut slf: PyRefMut<'py, Self>, mode: PyControlMode) -> PyResult<PyRefMut<'py, Self>> {
         match slf._instrument.set_control_mode(mode.into()) {
+            Ok(_) => Ok(slf),
+            Err(err) => Err(ArC2Error::new_exception(err))
+        }
+    }
+
+    /// set_logic(self, channel_mask, enable, /)
+    /// --
+    ///
+    /// Set the digital I/Os specified by `mask` to either high (when `enable` is `True`) or low
+    /// (when `enable` is `False`). An `execute` is required to actually load the configuration.
+    fn set_logic<'py>(mut slf: PyRefMut<'py, Self>, mask: u32, enable: bool) -> PyResult<PyRefMut<'py, Self>> {
+        let mask = IOMask::from_vals(&[mask]);
+
+        match slf._instrument.set_logic(&mask, enable) {
             Ok(_) => Ok(slf),
             Err(err) => Err(ArC2Error::new_exception(err))
         }
