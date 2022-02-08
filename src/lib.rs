@@ -360,6 +360,21 @@ impl PyInstrument {
         }
     }
 
+    /// connect_to_gnd(self, chans, /)
+    /// --
+    ///
+    /// Modify previously configured channels by switching them to ground. Use
+    /// an empty array to clear.
+    fn connect_to_gnd<'py>(mut slf: PyRefMut<'py, Self>, chans: PyReadonlyArray<usize, Ix1>)
+        -> PyResult<PyRefMut<'py, Self>> {
+
+        let slice = chans.as_slice().unwrap();
+        match slf._instrument.connect_to_gnd(slice) {
+            Ok(_) => Ok(slf),
+            Err(err) => Err(ArC2Error::new_exception(err))
+        }
+    }
+
     /// float_all(self, /)
     /// --
     ///
