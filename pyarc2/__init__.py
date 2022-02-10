@@ -6,6 +6,7 @@ from .pyarc2 import find_ids as _find_ids
 from dataclasses import dataclass
 from functools import partial
 from enum import Enum
+import numpy as np
 
 
 find_ids = _find_ids
@@ -17,12 +18,14 @@ class IdleMode(Enum):
     IdleMode is used with `Instrument.finalise_operation` to
     mark at what state the channels should be left. Selecting
     `Float` will disconnect all channels and leave their state
-    unchanged. `Gnd` will reset all channels to arbitrary voltage
-    operation and set them to 0.0 V.
+    unchanged. `SoftGnd` will reset all channels to arbitrary voltage
+    operation and set them to 0.0 V. `HardGnd` will disconnect all
+    channels from the DACs and connect them to hard ground.
     """
 
     Float: int = 0b01
-    Gnd: int = 0b10
+    SoftGnd: int = 0b10
+    HardGnd: int = 0b11
 
 
 @dataclass
@@ -84,9 +87,23 @@ class Instrument(__InstrumentLL):
         """
 
         if mode == IdleMode.Float:
-            self.ground_all_fast().float_all().execute()
-        elif mode == IdleMode.Gnd:
-            self.ground_all().execute()
+            # clear all hard grounds first
+            self.connect_to_gnd(np.arange(0, dtype=np.uint64)) \
+                .ground_all_fast() \
+                .float_all() \
+                .execute()
+        elif mode == IdleMode.SoftGnd:
+            # clear all hard grounds first
+            self.connect_to_gnd(np.arange(0, dtype=np.uint64)) \
+                .ground_all() \
+                .execute()
+        elif mode == IdleMode.HardGnd:
+            # reset DACs to 0.0, disconnect channels from
+            # the DACs and connect them to GND
+            self.ground_all_fast() \
+                .float_all() \
+                .connect_to_gnd(np.arange(64, dtype=np.uint64)) \
+                .execute()
         elif mode is None:
             pass
         else:
