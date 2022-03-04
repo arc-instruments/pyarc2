@@ -1,4 +1,5 @@
 use libarc2::{Instrument, BiasOrder, ControlMode, DataMode, ReadAt, ReadAfter, find_ids};
+use libarc2::{WaitFor};
 use libarc2::ArC2Error as LLArC2Error;
 use libarc2::registers::IOMask;
 use ndarray::{Ix1, Ix2, Array};
@@ -273,6 +274,43 @@ impl From<DataMode> for PyDataMode {
 impl From<PyDataMode> for DataMode {
     fn from(mode: PyDataMode) -> Self {
         mode._inner
+    }
+}
+
+/// Wait condition for long running operations, such as
+/// `Instrument.read_train`.
+#[pyclass(name="WaitFor", module="pyarc2")]
+#[derive(Clone)]
+struct PyWaitFor { _inner: WaitFor }
+
+#[allow(non_snake_case)]
+#[pymethods]
+impl PyWaitFor {
+    #[staticmethod]
+    fn Nanos(nanos: u64) -> PyWaitFor {
+        PyWaitFor { _inner: WaitFor::Time(std::time::Duration::from_nanos(nanos)) }
+    }
+
+    #[staticmethod]
+    fn Millis(millis: u64) -> PyWaitFor {
+        PyWaitFor { _inner: WaitFor::Time(std::time::Duration::from_millis(millis)) }
+    }
+
+    #[staticmethod]
+    fn Iterations(iters: usize) -> PyWaitFor {
+        PyWaitFor { _inner: WaitFor::Iterations(iters) }
+    }
+}
+
+impl From<WaitFor> for PyWaitFor {
+    fn from(waitfor: WaitFor) -> Self {
+        PyWaitFor { _inner: waitfor }
+    }
+}
+
+impl From<PyWaitFor> for WaitFor {
+    fn from(waitfor: PyWaitFor) -> Self {
+        waitfor._inner
     }
 }
 
@@ -648,6 +686,21 @@ impl PyInstrument {
 
     }
 
+    /// read_train(self, low, high, vread, interpulse, condition, /)
+    /// --
+    ///
+    /// Perform a retention-like operation based on subsequent number of read
+    /// pulses which can be separated by `interpulse` nanoseconds.
+    fn read_train<'py>(mut slf: PyRefMut<'py, Self>, low: usize, high: usize,
+        vread: f32, interpulse: u64, condition: PyWaitFor) -> PyResult<()> {
+
+        match slf._instrument.read_train(low, high, vread, interpulse as u128,
+            condition.into()) {
+            Ok(_) => Ok(()),
+            Err(err) => Err(ArC2Error::new_exception(err))
+        }
+    }
+
     /// pick_one(self, mode, /)
     /// --
     ///
@@ -702,6 +755,7 @@ fn pyarc2(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyDataMode>()?;
     m.add_class::<PyReadAt>()?;
     m.add_class::<PyReadAfter>()?;
+    m.add_class::<PyWaitFor>()?;
     m.add("ArC2Error", py.get_type::<ArC2Error>())?;
 
     Ok(())
