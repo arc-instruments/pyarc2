@@ -6,10 +6,9 @@ use ndarray::{Ix1, Ix2, Array};
 use numpy::{PyArray, PyReadonlyArray};
 use std::convert::{From, Into};
 use numpy::convert::IntoPyArray;
-use pyo3::prelude::{pymodule, pyclass, pymethods, pyproto};
+use pyo3::prelude::{pymodule, pyclass, pymethods};
 use pyo3::prelude::{PyModule, PyRefMut, PyResult, Python, PyErr};
 use pyo3::create_exception;
-use pyo3::class::basic::{PyObjectProtocol};
 use pyo3::exceptions;
 
 
@@ -155,32 +154,28 @@ impl PyReadAfter {
             _ => Err(exceptions::PyValueError::new_err("Unknown ReadAfter"))
         }
     }
-}
 
-#[pyproto]
-impl<'p> PyObjectProtocol for PyReadAfter {
-
-    fn __str__(&self) -> PyResult<&str> {
+    fn __str__(&self) -> &'static str {
 
         let inner = &self._inner;
 
         match inner {
-            ReadAfter::Pulse => Ok("pulse"),
-            ReadAfter::Ramp => Ok("ramp"),
-            ReadAfter::Block => Ok("block"),
-            ReadAfter::Never => Ok("never")
+            ReadAfter::Pulse => "pulse",
+            ReadAfter::Ramp => "ramp",
+            ReadAfter::Block => "block",
+            ReadAfter::Never => "never"
         }
     }
 
-    fn __repr__(&self) -> PyResult<&str> {
+    fn __repr__(&self) -> &'static str {
 
         let inner = &self._inner;
 
         match inner {
-            ReadAfter::Pulse => Ok("ReadAfter<Pulse>"),
-            ReadAfter::Ramp => Ok("ReadAfter<Ramp>"),
-            ReadAfter::Block => Ok("ReadAfter<Block>"),
-            ReadAfter::Never => Ok("ReadAfter<Never>")
+            ReadAfter::Pulse => "ReadAfter<Pulse>",
+            ReadAfter::Ramp => "ReadAfter<Ramp>",
+            ReadAfter::Block => "ReadAfter<Block>",
+            ReadAfter::Never => "ReadAfter<Never>"
         }
 
     }
@@ -318,12 +313,12 @@ impl From<PyWaitFor> for WaitFor {
 #[pyclass(name="ArC2ErrorWrapper", module="pyarc2")]
 struct PyArC2Error { _inner: LLArC2Error }
 
-#[pyproto]
-impl<'p> PyObjectProtocol for PyArC2Error {
+#[pymethods]
+impl PyArC2Error {
 
-    fn __str__(&self) -> PyResult<String> {
+    fn __str__(&self) -> String {
         let inner = &self._inner;
-        Ok(format!("{}", inner))
+        format!("{}", inner)
     }
 
 }
