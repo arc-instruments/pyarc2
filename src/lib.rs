@@ -615,10 +615,10 @@ impl PyInstrument {
     ///
     /// Set the digital I/Os specified by `mask` to either high (when `enable` is `True`) or low
     /// (when `enable` is `False`). An `execute` is required to actually load the configuration.
-    fn set_logic<'py>(mut slf: PyRefMut<'py, Self>, mask: u32, enable: bool) -> PyResult<PyRefMut<'py, Self>> {
+    fn set_logic<'py>(mut slf: PyRefMut<'py, Self>, mask: u32) -> PyResult<PyRefMut<'py, Self>> {
         let mask = IOMask::from_vals(&[mask]);
 
-        match slf._instrument.set_logic(&mask, enable) {
+        match slf._instrument.set_logic(&mask) {
             Ok(_) => Ok(slf),
             Err(err) => Err(ArC2Error::new_exception(err))
         }
