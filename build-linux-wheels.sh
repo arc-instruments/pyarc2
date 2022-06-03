@@ -8,12 +8,13 @@ set -ex
 
 apt update
 
-apt-get -y install libusb-1.0
+apt-get -y install libusb-1.0 libusb-0.1
 apt install -y /io/cesys-udk-lite_1.5.1-1.deb /io/beastlink-free_1.0-1.deb
 
 curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain stable -y
 
 export PATH="${HOME}/.cargo/bin:${PATH}"
+export WHLPLAT=manylinux_2_24_x86_64
 
 cd /io/pyarc2
 
@@ -34,5 +35,6 @@ for PYBIN in /opt/python/cp{37,38,39,310}*/bin; do
 done
 
 for whl in /io/pyarc2/target/wheels/*.whl; do
-    auditwheel repair "$whl" -w /io/pyarc2/target/wheels
+    # make sure we target the correct platform when repairing
+    auditwheel repair --plat $WHLPLAT "$whl" -w /io/pyarc2/target/wheels || true
 done
