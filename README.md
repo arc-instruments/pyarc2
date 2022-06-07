@@ -45,6 +45,4 @@ print('I = %g A' % current)
 `pyarc2` can also be used to implement new plugins based on `libarc2`.  Access
 to the lower level object is done via `Instrument::inner()` and
 `Instrument::inner_mut()`. These plugins can fully leverage `libarc2`
-functionality but require some familiarity with Rust and the `libarc2` API.  A
-[template project](https://github.com/arc-instruments/arc2plugin-template) is
-provided to get started.
+functionality but require some familiarity with Rust and the `libarc2` API.
