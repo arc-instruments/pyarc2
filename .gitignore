@@ -6,6 +6,7 @@ Cargo.lock
 /dist
 /build
 /*.egg-info
+/docs/_build/*
 *.so
 *.dll
 *.lib
