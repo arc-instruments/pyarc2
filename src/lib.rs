@@ -257,8 +257,9 @@ impl From<PyControlMode> for ControlMode {
 
 /// DataMode is used to signify the retrieval mode of values
 /// from ArC2 memory. Typically this is used with :meth:`pyarc2.Instrument.pick_one`
-/// to read values from memory. If ``Words``/``Bits`` is selected only
-/// wordlines/bitlines will be returned. Use ``All`` to return all values.
+/// or :meth:`pyarc2.Instrument.get_iter` to read values from memory. If
+/// ``Words``/``Bits`` is selected only wordlines/bitlines will be returned.
+/// Use ``All`` to return all values.
 ///
 /// :var Words: Return values associated with wordlines
 /// :var Bits: Return values associated with bitlines
