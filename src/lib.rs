@@ -391,7 +391,7 @@ impl ArC2Error {
     }
 }
 
-#[pyclass(name="Instrument", module="pyarc2", subclass)]
+#[pyclass(name="InstrumentLL", module="pyarc2", subclass)]
 pub struct PyInstrument {
     _instrument: Instrument
 }
@@ -423,6 +423,7 @@ impl PyInstrument {
     /// :param str fw: Firmware to load unto ArC2
     /// :return: A freshly connected instrument
     #[new(name="Instrument")]
+    #[new(name="InstrumentLL")]
     fn new(id: i32, fw: &str) -> PyResult<Self> {
         match Instrument::open_with_fw(id, fw, true) {
             Ok(instr) => Ok(PyInstrument { _instrument: instr }),

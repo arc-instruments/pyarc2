@@ -1,4 +1,4 @@
-from .pyarc2 import Instrument as __InstrumentLL
+from .pyarc2 import InstrumentLL as __InstrumentLL
 from .pyarc2 import BiasOrder, ControlMode, DataMode, WaitFor
 from .pyarc2 import ReadAt, ReadAfter, ArC2Error
 from .pyarc2 import find_ids
