@@ -1,5 +1,8 @@
 @echo off
 
+for /R %%a in (pyarc2\pyarc2*.pyd) DO DEL %%a
+for /R %%a in (pyarc2\pyarc2*.so) DO DEL %%a
+
 python -m poetry install
 python -m poetry update
 python -m poetry run maturin build --release
