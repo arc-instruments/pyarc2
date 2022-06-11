@@ -412,17 +412,6 @@ impl PyInstrument {
 #[pymethods]
 impl PyInstrument {
 
-    /// Open a connection to an ArC2 instrument. This is the first method
-    /// to call when initiating communication to ArC2. Please note that the
-    /// constructor of ``Instrument`` is not thread-safe and creating a new
-    /// object with a previously used id (effectively connecting to the same
-    /// instrument twice) will cause libusb errors.
-    ///
-    /// :param int id: The id of the ArC2 instrumen to connect to; find one with
-    ///                :meth:`pyarc2.find_ids`
-    /// :param str fw: Firmware to load unto ArC2
-    /// :return: A freshly connected instrument
-    #[new(name="Instrument")]
     #[new(name="InstrumentLL")]
     fn new(id: i32, fw: &str) -> PyResult<Self> {
         match Instrument::open_with_fw(id, fw, true) {
@@ -926,7 +915,8 @@ fn pyarc2(py: Python, m: &PyModule) -> PyResult<()> {
     ///
     /// >>> from pyarc2 import find_ids
     /// >>> ids = find_ids()
-    /// >>> # returns: [0, 1]
+    /// >>> print(ids)
+    /// [0, 1]
     #[pyfn(m)]
     #[pyo3(name="find_ids")]
     fn py_find_ids(_py: Python) -> PyResult<Vec<i32>> {

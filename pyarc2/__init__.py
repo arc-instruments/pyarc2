@@ -38,13 +38,26 @@ class ArC2Config:
 
 
 class Instrument(__InstrumentLL):
+    """
+    To do anything with ArC TWO you will need first to instantiate an
+    ``Instrument``. The constructor requires a port number and a path to load
+    fimrware from. Using :meth:`~pyarc2.find_ids` will return all available
+    ArC TWO instrument ports.
+
+    >>> from pyarc2 import Instrument, find_ids
+    >>> ids = find_ids()
+    >>> if len(ids) == 0:  # no instruments ound
+    >>>     return
+    >>> # Connect to the first available ArC TWO loading firmware "fw.bin"
+    >>> arc = Instrument(ids[0], 'fw.bin')
+
+    :param int port: The EFM id of the ArC TWO to connect to
+    :param str firwmare: Path of the firmware to load
+
+    :return: A new instance of ``pyarc2.Instrument``
+    """
 
     def __init__(self, port, firmware):
-        """
-        Initialise a new ArC2 connection. Argument ``port`` is the EFM id that
-        can be found with :meth:`pyarc2.find_ids` and ``firmware`` is the path to
-        the FPGA firmware to load when initialising.
-        """
         super(Instrument, self).__init__()
 
     def _array_iter_inner(self, mode):
