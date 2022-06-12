@@ -16,7 +16,9 @@ exclude = [
   "pyarc2/*.so",
   "pyarc2/*.dll",
   "pyarc2/*.pyd",
-  "poetry.lock"
+  "poetry.lock",
+  ".github/*",
+  ".readthedocs.yml"
 ]
 
 [lib]

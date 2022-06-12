@@ -1,0 +1,93 @@
+name: Generate wheels
+on: [push]
+jobs:
+  linux-wheels:
+    if: ${{ startsWith(github.ref, 'refs/tags') }}
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/pypa/manylinux_2_24_x86_64
+    steps:
+    - uses: actions/checkout@v3
+    - name: Link /io
+      run: ln -s /__w/pyarc2 /io
+    - name: Run build script
+      run: ./build-linux-wheels.sh
+    - name: Gather wheels
+      uses: actions/upload-artifact@v3
+      with:
+        name: pyarc2-manylinux_x86_64
+        path: |
+          target/wheels/pyarc2*-manylinux*_x86_64.whl
+    - name: Gather sdist
+      uses: actions/upload-artifact@v3
+      with:
+        name: pyarc2-sdist
+        path: target/wheels/pyarc2*tar.gz
+  windows-wheels:
+    if: ${{ startsWith(github.ref, 'refs/tags') }}
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: ['3.8', '3.9', '3.10']
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install required python packages
+        run: python -m pip install poetry delvewheel requests
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - name: Fetch required libraries
+        run: python getbl-win32.py
+      - name: Build
+        run: .\build-win32-wheels.bat
+        shell: cmd
+      - name: Gather wheels
+        uses: actions/upload-artifact@v3
+        with:
+          name: pyarc2-win_amd64
+          path: target/wheels/pyarc2*-win_amd64.whl
+  publish:
+    if: ${{ startsWith(github.ref, 'refs/tags') }}
+    runs-on: ubuntu-latest
+    needs: [windows-wheels, linux-wheels]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install python tools
+        run: python -m pip install twine
+      - uses: actions/download-artifact@v3
+        id: download
+        with:
+          path: artifacts
+      - name: Print download path
+        run: echo ${{ steps.download.outputs.download-path }}
+      - name: List artifacts dir contents
+        run: ls -l artifacts
+      - name: Download path contents
+        run: |
+          ls -l artifacts/pyarc2-sdist/*tar.gz && 
+          ls -l artifacts/pyarc2-manylinux_x86_64/*whl &&
+          ls -l artifacts/pyarc2-win_amd64/*whl
+      - name: Twine check
+        run: |
+          python -m twine check \
+            artifacts/pyarc2-sdist/*tar.gz \
+            artifacts/pyarc2-manylinux_x86_64/*whl \
+            artifacts/pyarc2-win_amd64/*whl
+      - name: Publish
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_API_TOKEN }}
+        run: |
+          python -m twine upload \
+            artifacts/pyarc2-sdist/*tar.gz \
+            artifacts/pyarc2-manylinux_x86_64/*whl \
+            artifacts/pyarc2-win_amd64/*whl
