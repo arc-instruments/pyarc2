@@ -13,6 +13,7 @@ exclude = [
   "build-linux-wheels.sh",
   "build-win32-wheels.bat",
   "getbl-win32.py",
+  "releasecheck.py",
   "pyarc2/*.so",
   "pyarc2/*.dll",
   "pyarc2/*.pyd",
