@@ -29,7 +29,7 @@ crate-type = ["cdylib", "lib"]
 [dependencies]
 numpy = "0.16"
 ndarray = "0.15"
-libarc2 = { git = "https://github.com/arc-instruments/libarc2" }
+libarc2 = { git = "https://github.com/arc-instruments/libarc2", tag = "0.1.1" }
 
 [dependencies.pyo3]
 version = "0.16"
