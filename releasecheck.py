@@ -6,6 +6,22 @@ import requests
 import tomli
 import sys
 import json
+import subprocess
+import shutil
+import semver
+
+
+def latest_tag():
+    git = shutil.which('git')
+
+    cmd = [git, 'tag', '--sort=committerdate']
+
+    lines = subprocess.check_output(cmd).decode().splitlines()
+
+    try:
+        return lines[-1]
+    except IndexError:
+        return None
 
 
 def docs_version():
@@ -62,9 +78,17 @@ if __name__ == "__main__":
 
     if sys.argv[1] == 'commitcheck':
         try:
-            print('Found internal version:', internal_version())
+            iver = internal_version()
+            print('Found internal version:', iver)
         except ValueError as err:
             print('Repository versions are not consistent', file=sys.stderr)
+            sys.exit(1)
+
+        maxver = latest_tag()
+
+        if maxver is not None and semver.cmp(maxver, iver) > 0:
+            print('Current repository version is not higher than latest tag; '\
+                'bump versions', file=sys.stderr)
             sys.exit(1)
 
     if sys.argv[1] == 'releasecheck':
@@ -73,6 +97,13 @@ if __name__ == "__main__":
             print('Found internal version:', iver)
         except ValueError as err:
             print('Repository versions are not consistent', file=sys.stderr)
+            sys.exit(1)
+
+        maxver = latest_tag()
+
+        if maxver is not None and semver.cmp(maxver, iver) > 0:
+            print('Current repository version is not higher than latest tag; '\
+                'bump versions', file=sys.stderr)
             sys.exit(1)
 
         try:
