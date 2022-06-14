@@ -58,9 +58,19 @@ jobs:
           toolchain: stable
       - name: Fetch required libraries
         run: python getbl-win32.py
+      - name: Poetry environment setup 1 of 2
+        run: python -m poetry install
+      - name: Poetry environment setup 2 of 2
+        run: python -m poetry update
       - name: Build
-        run: .\build-win32-wheels.bat
-        shell: cmd
+        run: python -m poetry run maturin build --release --interpreter python.exe
+      - name: Delvewheel
+        run: |
+          $files = Get-ChildItem target\wheels\pyarc2*-win_amd64.whl
+          foreach ($f in $files) {
+            python -m poetry run delvewheel repair --add-path . $f.FullName -w target\wheels
+          }
+        shell: pwsh
       - name: Gather wheels
         uses: actions/upload-artifact@v3
         with:
