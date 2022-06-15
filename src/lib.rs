@@ -1,5 +1,7 @@
-use libarc2::{Instrument, BiasOrder, ControlMode, DataMode, ReadAt, ReadAfter, find_ids};
-use libarc2::{WaitFor};
+#[cfg(all(any(target_os = "windows", target_os = "linux"), target_arch = "x86_64"))]
+use libarc2::Instrument;
+
+use libarc2::{BiasOrder, ControlMode, DataMode, ReadAt, ReadAfter, find_ids, WaitFor};
 use libarc2::ArC2Error as LLArC2Error;
 use libarc2::registers::IOMask;
 use ndarray::{Ix1, Ix2, Array};
@@ -391,11 +393,13 @@ impl ArC2Error {
     }
 }
 
+#[cfg(all(any(target_os = "windows", target_os = "linux"), target_arch = "x86_64"))]
 #[pyclass(name="InstrumentLL", module="pyarc2", subclass)]
 pub struct PyInstrument {
     _instrument: Instrument
 }
 
+#[cfg(all(any(target_os = "windows", target_os = "linux"), target_arch = "x86_64"))]
 impl PyInstrument {
 
     /// Returns a reference to the underlying Instrument
@@ -409,6 +413,7 @@ impl PyInstrument {
     }
 }
 
+#[cfg(all(any(target_os = "windows", target_os = "linux"), target_arch = "x86_64"))]
 #[pymethods]
 impl PyInstrument {
 
@@ -926,7 +931,9 @@ fn pyarc2(py: Python, m: &PyModule) -> PyResult<()> {
         }
     }
 
+    #[cfg(all(any(target_os = "windows", target_os = "linux"), target_arch = "x86_64"))]
     m.add_class::<PyInstrument>()?;
+
     m.add_class::<PyBiasOrder>()?;
     m.add_class::<PyControlMode>()?;
     m.add_class::<PyDataMode>()?;
