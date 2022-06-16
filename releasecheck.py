@@ -86,7 +86,7 @@ if __name__ == "__main__":
 
         maxver = latest_tag()
 
-        if maxver is not None and semver.cmp(maxver, iver) > 0:
+        if maxver is not None and semver.compare(maxver, iver) > 0:
             print('Current repository version is not higher than latest tag; '\
                 'bump versions', file=sys.stderr)
             sys.exit(1)
@@ -101,7 +101,7 @@ if __name__ == "__main__":
 
         maxver = latest_tag()
 
-        if maxver is not None and semver.cmp(maxver, iver) > 0:
+        if maxver is not None and semver.compare(maxver, iver) > 0:
             print('Current repository version is not higher than latest tag; '\
                 'bump versions', file=sys.stderr)
             sys.exit(1)
