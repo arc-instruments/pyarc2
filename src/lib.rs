@@ -475,6 +475,25 @@ impl PyInstrument {
         }
     }
 
+
+    /// config_channels(self, config, base, /)
+    /// --
+    ///
+    /// Configure a set of channels at specific voltages.
+    ///
+    /// :param config: An array of tuples ``[(channel, voltage), ...]`` specifying
+    ///                the voltage configuration.
+    /// :param base: Voltage to set all channel *not* included in ``config``.
+    ///              Set to ``None`` to leave them at their previous state.
+    fn config_channels<'py>(mut slf: PyRefMut<'py, Self>, input: Vec<(u16, f32)>, base: Option<f32>)
+        -> PyResult<PyRefMut<'py, Self>> {
+
+        match slf._instrument.config_channels(&input, base) {
+            Ok(_) => Ok(slf),
+            Err(err) => Err(ArC2Error::new_exception(err))
+        }
+    }
+
     /// read_one(self, low, high, vread, /)
     /// --
     ///
