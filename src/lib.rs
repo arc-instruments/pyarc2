@@ -388,7 +388,7 @@ create_exception!(pyarc2, ArC2Error, exceptions::PyException,
     and (5) Output buffer access errors");
 
 impl ArC2Error {
-    fn new_exception(err: LLArC2Error) -> PyErr {
+    pub fn new_exception(err: LLArC2Error) -> PyErr {
         ArC2Error::new_err(PyArC2Error { _inner: err })
     }
 }
