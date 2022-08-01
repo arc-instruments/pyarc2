@@ -44,7 +44,7 @@ numpy = ">=1.18"
 
 [tool.poetry.dev-dependencies]
 wheel = "*"
-maturin = "^0.12"
+maturin = "^0.13"
 delvewheel = [{ version = "^0.0.15", platform = 'win32' }]
 
 [build-system]
