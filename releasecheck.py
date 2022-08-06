@@ -11,6 +11,18 @@ import shutil
 import semver
 
 
+def current_tag():
+    try:
+        out = subprocess.check_output([\
+            'git', 'name-rev', '--name-only', '--no-undefined', '--tags', 'HEAD'],
+            stderr=subprocess.DEVNULL)
+        out = re.split('[\^\,\+]', out.decode().strip())
+        semver.parse(out[0])
+        return out[0]
+    except (subprocess.CalledProcessError, ValueError):
+        return None
+
+
 def latest_tag():
     git = shutil.which('git')
 
@@ -65,7 +77,10 @@ def pypi_versions():
 
     data = requests.get('https://pypi.org/pypi/pyarc2/json')
 
-    if data.status_code != 200:
+    # project not found, that's fine will be created now
+    if data.status_code == 404:
+        return []
+    elif data.status_code != 200:
         raise Exception('Could not determine PyPI version')
 
     content = json.loads(data.content)
@@ -100,10 +115,19 @@ if __name__ == "__main__":
             sys.exit(1)
 
         maxver = latest_tag()
+        curtag = current_tag()
+
+        if maxver is None:
+            print('Cannot find latest tag', file=sys.stderr)
+            sys.exit(1)
 
         if maxver is not None and semver.compare(maxver, iver) > 0:
             print('Current repository version is not higher than latest tag; '\
                 'bump versions', file=sys.stderr)
+            sys.exit(1)
+
+        if maxver != curtag:
+            print('Latest and highest tag are not the same', maxver, curtag, file=sys.stderr)
             sys.exit(1)
 
         try:
