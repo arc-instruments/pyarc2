@@ -887,10 +887,11 @@ impl PyInstrument {
     /// :param condition: Variant of :class:`pyarc2.WaitFor` denoting the termination
     ///                   condition for this read train
     fn read_train<'py>(mut slf: PyRefMut<'py, Self>, low: usize, high: usize,
-        vread: f32, interpulse: u64, condition: PyWaitFor) -> PyResult<()> {
+        vread: f32, interpulse: u64, preload: Option<f32>, condition: PyWaitFor)
+        -> PyResult<()> {
 
         match slf._instrument.read_train(low, high, vread, interpulse as u128,
-            condition.into()) {
+            preload, condition.into()) {
             Ok(_) => Ok(()),
             Err(err) => Err(ArC2Error::new_exception(err))
         }
