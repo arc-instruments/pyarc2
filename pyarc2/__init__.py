@@ -1,12 +1,38 @@
-from .pyarc2 import InstrumentLL as __InstrumentLL
+from .pyarc2 import InstrumentLL as _InstrumentLL
 from .pyarc2 import BiasOrder, ControlMode, DataMode, WaitFor
 from .pyarc2 import ReadAt, ReadAfter, ArC2Error
 from .pyarc2 import find_ids
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from functools import partial
 from enum import Enum
 import numpy as np
+
+
+def _inheritdocs(fromfn, sep="\n"):
+    def _decorator(fn):
+        srcdoc = fromfn.__doc__
+        if fn.__doc__ is None:
+            fn.__doc__ = srcdoc
+        else:
+            fn.__doc__ = sep.join([srcdoc, fn.__doc__])
+        return fn
+    return _decorator
+
+
+def _ndarray_check(arg, ndim=1, typ=np.uint64):
+    if isinstance(arg, np.ndarray) and arg.dtype == typ and arg.ndim == ndim:
+        return arg
+    elif isinstance(arg, Iterable) and not isinstance(arg, (str, bytes)):
+        a = np.array(arg, dtype=typ)
+        if a.ndim == ndim:
+            return a
+        else:
+            raise TypeError('Invalid argument dimensions, must be: %d, ' \
+                'found %d instead' % (ndim, a.ndim))
+    else:
+        raise TypeError('Invalid argument type, must be an iterable')
 
 
 class IdleMode(Enum):
@@ -37,7 +63,7 @@ class ArC2Config:
     controlMode: ControlMode
 
 
-class Instrument(__InstrumentLL):
+class Instrument(_InstrumentLL):
     """
     To do anything with ArC TWO you will need first to instantiate an
     ``Instrument``. The constructor requires a port number and a path to load
@@ -134,3 +160,27 @@ class Instrument(__InstrumentLL):
             pass
         else:
             raise ArC2Error("Invalid control mode")
+
+    @_inheritdocs(_InstrumentLL.connect_to_gnd)
+    def connect_to_gnd(self, chans):
+        return super().connect_to_gnd(_ndarray_check(chans))
+
+    @_inheritdocs(_InstrumentLL.read_slice_masked)
+    def read_slice_masked(self, chan, mask, vread):
+        return super().read_slice_masked(chan, _ndarray_check(mask), vread)
+
+    @_inheritdocs(_InstrumentLL.read_slice_open)
+    def read_slice_open(self, highs, ground_after):
+        return super().read_slice_open(_ndarray_check(highs), ground_after)
+
+    @_inheritdocs(_InstrumentLL.pulse_slice_masked)
+    def pulse_slice_masked(self, chan, voltage, nanos, mask):
+        return super().pulse_slice_masked(chan, voltage, nanos, _ndarray_check(mask))
+
+    @_inheritdocs(_InstrumentLL.pulseread_slice_masked)
+    def pulseread_slice_masked(self, chan, mask, vpulse, nanos, vread):
+        return super().pulseread_slice_masked(chan, _ndarray_check(mask), vpulse, nanos, vread)
+
+    @_inheritdocs(_InstrumentLL.currents_from_address)
+    def currents_from_address(self, addr, chans):
+        return super().currents_from_address(addr, _ndarray_check(chans))

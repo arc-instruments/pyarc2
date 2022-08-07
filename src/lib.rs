@@ -453,7 +453,8 @@ impl PyInstrument {
     /// Modify previously configured channels by switching them to ground. Use
     /// an empty array to clear.
     ///
-    /// :param chans: The channels to ground; this **must** be a numpy uint32 array.
+    /// :param chans: The channels to ground; this must be a numpy uint32 array or
+    ///               any Iterable whose elements can be converted to uint32.
     fn connect_to_gnd<'py>(mut slf: PyRefMut<'py, Self>, chans: PyReadonlyArray<usize, Ix1>)
         -> PyResult<PyRefMut<'py, Self>> {
 
@@ -536,13 +537,15 @@ impl PyInstrument {
     /// it's a column read.
     ///
     /// :param int chan: The low voltage channel
-    /// :param mask: A numpy array with the high-voltage channels
+    /// :param mask: The high-voltage channels. This must be a numpy uint32 array or
+    ///              any other Iterable whose elements can be converted to uint32
     /// :param float vread: The voltage to read at
     /// :return: The current of each selected channel along the ``chan`` line sinked
     ///          at ``chan``; unselected channels will default to ``NaN``
     /// :rtype: A numpy f32 array
-    fn read_slice_masked<'py>(&mut self, py: Python<'py>, chan: usize, mask: PyReadonlyArray<usize, Ix1>, vread: f32)
-        -> &'py PyArray<f32, Ix1> {
+    fn read_slice_masked<'py>(&mut self, py: Python<'py>, chan: usize,
+        mask: PyReadonlyArray<usize, Ix1>, vread: f32) -> &'py PyArray<f32, Ix1> {
+
         let slice = mask.as_slice().unwrap();
         self._instrument.read_slice_masked_as_ndarray(chan, slice, vread).unwrap().into_pyarray(py)
     }
@@ -610,9 +613,10 @@ impl PyInstrument {
     /// :param int chan: The low voltage channel
     /// :param float voltage: The pulsing voltage
     /// :param int nanos: The pulse duration in nanoseconds
-    /// :param mask: A numpy array with the high voltage channels; same
+    /// :param mask: A numpy array or Iterable with the high voltage channels; same
     ///              semantics as :meth:`~pyarc2.Instrument.read_slice_masked`
-    fn pulse_slice_masked<'py>(mut slf: PyRefMut<'py, Self>, chan: usize, voltage: f32, nanos: u128, mask: PyReadonlyArray<usize, Ix1>)
+    fn pulse_slice_masked<'py>(mut slf: PyRefMut<'py, Self>, chan: usize, voltage: f32, nanos: u128,
+        mask: PyReadonlyArray<usize, Ix1>)
         -> PyResult<PyRefMut<'py, Self>> {
 
         let actual_mask = mask.as_slice().unwrap();
@@ -688,7 +692,8 @@ impl PyInstrument {
     /// and :meth:`~pyarc2.Instrument.read_slice_masked` apply.
     ///
     /// :param int chan: The low voltage channel
-    /// :param mask: A numpy array with the high-voltage channels
+    /// :param mask: A numpy array or Iterable with the high-voltage channels.
+    ///              Elements must be uint32 or convertible to uint32
     /// :param float vpulse: The pulsing voltage
     /// :param int nanos: The pulse duration in nanoseconds
     /// :param float vread: The voltage to read at
@@ -793,11 +798,15 @@ impl PyInstrument {
     /// the channel values stored in the segment in ascending channel order
     ///
     /// :param int addr: The memory address to read currents from
-    /// :param chans: The channel numbers to retrieve values from
+    /// :param chans: The channel numbers to retrieve values from. This must be a
+    ///               numpy uint32 array or any Iterable whose elements can be
+    ///               converted to uint32.
     /// :return: An array with the currents of selected channels; unselected channels
     ///          will be replaced with ``Nan``
     /// :rtype: A numpy f32 array
-    fn currents_from_address<'py>(&self, py: Python<'py>, addr: u32, chans: PyReadonlyArray<usize, Ix1>) -> PyResult<&'py PyArray<f32, Ix1>> {
+    fn currents_from_address<'py>(&self, py: Python<'py>, addr: u32,
+        chans: PyReadonlyArray<usize, Ix1>) -> PyResult<&'py PyArray<f32, Ix1>> {
+
         match self._instrument.currents_from_address(addr, chans.as_slice().unwrap()) {
             Ok(result) => Ok(Array::from(result).into_pyarray(py)),
             Err(err) => Err(ArC2Error::new_exception(err))
