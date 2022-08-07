@@ -19,7 +19,8 @@ exclude = [
   "pyarc2/*.pyd",
   "poetry.lock",
   ".github/*",
-  ".readthedocs.yml"
+  ".readthedocs.yml",
+  ".gitignore",
 ]
 
 [lib]
