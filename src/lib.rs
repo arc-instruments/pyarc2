@@ -566,6 +566,28 @@ impl PyInstrument {
         self._instrument.read_all_as_ndarray(vread, order.into()).unwrap().into_pyarray(py)
     }
 
+    /// read_slice_open(self, highs, ground_after, /)
+    /// --
+    ///
+    /// Perform an open current measurement along the specified channels. This method does not do
+    /// any bias-related setup. It's up to the user to setup channels before performing the read.
+    /// If ``ground_after`` is True or None a ground operation will additionally be issued
+    /// post-read.
+    ///
+    /// :param highs: The channels to read currents from. This must be a numpy uint32 or
+    ///               an Iterable whose elements can be converted to uint32
+    /// :param bool ground_after: Whether channels will be grounded automatically after
+    ///                           current is read
+    /// :rtype: A numpy f32 array
+    fn read_slice_open<'py>(&mut self, py: Python<'py>, highs: PyReadonlyArray<usize, Ix1>,
+        ground_after: Option<bool>) -> &'py PyArray<f32, Ix1> {
+
+        let slice = highs.as_slice().unwrap();
+        let ground = ground_after.unwrap_or(true);
+
+        self._instrument.read_slice_open(slice, ground).unwrap().into_pyarray(py)
+    }
+
     /// pulse_one(self, low, high, voltage, nanos, /)
     /// --
     ///
