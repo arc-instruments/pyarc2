@@ -12,15 +12,25 @@ repository = "https://github.com/arc-instruments/pyarc2"
 exclude = [
   "build-linux-wheels.sh",
   "build-win32-wheels.bat",
+  "build/*",
+  "dist/*",
+  "docs/_build",
+  "*.egg-info",
   "getbl-win32.py",
   "releasecheck.py",
   "pyarc2/*.so",
   "pyarc2/*.dll",
   "pyarc2/*.pyd",
+  "*.lib",
+  "*.dll",
+  "*.pyd",
+  "*.so",
   "poetry.lock",
   ".github/*",
   ".readthedocs.yml",
   ".gitignore",
+  "__pycache__",
+  "pyarc2/__pycache__"
 ]
 
 [lib]
