@@ -8,9 +8,10 @@ from dataclasses import dataclass
 from functools import partial
 from enum import Enum
 import numpy as np
+from ._types import *
 
 
-def _inheritdocs(fromfn, sep="\n"):
+def _inheritdocs(fromfn: Callable, sep: str="\n"):
     def _decorator(fn):
         srcdoc = fromfn.__doc__
         if fn.__doc__ is None:
@@ -21,7 +22,8 @@ def _inheritdocs(fromfn, sep="\n"):
     return _decorator
 
 
-def _ndarray_check(arg, ndim=1, typ=np.uint64):
+def _ndarray_check(arg: IntIterable, ndim: int = 1, typ: NpUint=np.uint64) -> np.ndarray:
+
     if isinstance(arg, np.ndarray) and arg.dtype == typ and arg.ndim == ndim:
         return arg
     elif isinstance(arg, Iterable) and not isinstance(arg, (str, bytes)):
@@ -83,16 +85,16 @@ class Instrument(_InstrumentLL):
     :return: A new instance of ``pyarc2.Instrument``
     """
 
-    def __init__(self, port, firmware):
-        super(Instrument, self).__init__()
+    def __init__(self, port: int, firmware: str):
+        super(Instrument, self).__init__(port, firmware)
 
-    def _array_iter_inner(self, mode):
+    def _array_iter_inner(self, mode: DataMode):
         data = self.pick_one(mode)
         if data is None:
             return None
         return [data]
 
-    def get_iter(self, mode):
+    def get_iter(self, mode: DataMode):
         """
         Return an iteration on the internal data buffer. This allows
         users to iterate through the saved results on ArC2's memory
@@ -115,7 +117,7 @@ class Instrument(_InstrumentLL):
         fn = partial(self._array_iter_inner, mode)
         return iter(fn, None)
 
-    def finalise_operation(self, mode=None, control=None):
+    def finalise_operation(self, mode: Optional[DataMode] = None, control: Optional[ControlMode] = None):
         """
         This function is used to safely reset channels and daughterboard
         control at the end of an operation. The available options are outlined
@@ -162,25 +164,30 @@ class Instrument(_InstrumentLL):
             raise ArC2Error("Invalid control mode")
 
     @_inheritdocs(_InstrumentLL.connect_to_gnd)
-    def connect_to_gnd(self, chans):
-        return super().connect_to_gnd(_ndarray_check(chans))
+    def connect_to_gnd(self, chans: IntIterable) -> 'Instrument':
+        i = super().connect_to_gnd(_ndarray_check(chans))
+        return cast(Instrument, i)
 
     @_inheritdocs(_InstrumentLL.read_slice_masked)
-    def read_slice_masked(self, chan, mask, vread):
+    def read_slice_masked(self, chan: int, mask: IntIterable, vread: float) -> np.ndarray:
         return super().read_slice_masked(chan, _ndarray_check(mask), vread)
 
     @_inheritdocs(_InstrumentLL.read_slice_open)
-    def read_slice_open(self, highs, ground_after):
+    def read_slice_open(self, highs: IntIterable, ground_after: bool) -> np.ndarray:
         return super().read_slice_open(_ndarray_check(highs), ground_after)
 
     @_inheritdocs(_InstrumentLL.pulse_slice_masked)
-    def pulse_slice_masked(self, chan, voltage, nanos, mask):
-        return super().pulse_slice_masked(chan, voltage, nanos, _ndarray_check(mask))
+    def pulse_slice_masked(self, chan: int, voltage: float, nanos: int,
+        mask: IntIterable) -> 'Instrument':
+        i = super().pulse_slice_masked(chan, voltage, nanos, _ndarray_check(mask))
+        return cast(Instrument, i)
 
     @_inheritdocs(_InstrumentLL.pulseread_slice_masked)
-    def pulseread_slice_masked(self, chan, mask, vpulse, nanos, vread):
-        return super().pulseread_slice_masked(chan, _ndarray_check(mask), vpulse, nanos, vread)
+    def pulseread_slice_masked(self, chan: int, mask: IntIterable, vpulse: float,
+        nanos: int, vread: float) -> np.ndarray:
+        return super().pulseread_slice_masked(chan, _ndarray_check(mask), vpulse,
+            nanos, vread)
 
     @_inheritdocs(_InstrumentLL.currents_from_address)
-    def currents_from_address(self, addr, chans):
+    def currents_from_address(self, addr: int, chans: IntIterable) -> np.ndarray:
         return super().currents_from_address(addr, _ndarray_check(chans))

@@ -851,7 +851,7 @@ impl PyInstrument {
         }
     }
 
-    /// bit_currents_from_address(self, addr, channels, /)
+    /// bit_currents_from_address(self, addr, /)
     /// --
     ///
     /// Read all bit current values from specific address segment. This will return all
