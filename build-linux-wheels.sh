@@ -42,7 +42,7 @@ for PYBIN in /opt/python/cp{38,39,310}*/bin; do
     PYTHON_SYS_EXECUTABLE=${PYEXEC} PYO3_PYTHON=${PYEXEC} \
             ${PYEXEC} -m poetry run maturin build \
             --release --interpreter ${PYEXEC} \
-            --manylinux off
+            --skip-auditwheel --compatibility off --sdist
 done
 
 for whl in /io/pyarc2/target/wheels/*-linux_x86_64.whl; do
