@@ -425,6 +425,17 @@ impl PyInstrument {
         }
     }
 
+    /// delay(self, nanos, /)
+    /// --
+    ///
+    /// Insert a delay of ``nanos`` nanoseconds in the command buffer.
+    fn delay<'py>(mut slf: PyRefMut<'py, Self>, nanos: u128) -> PyResult<PyRefMut<'py, Self>> {
+        match slf._instrument.add_delay(nanos) {
+            Ok(_) => Ok(slf),
+            Err(err) => Err(ArC2Error::new_exception(err))
+        }
+    }
+
     /// ground_all(self, /)
     /// --
     ///
