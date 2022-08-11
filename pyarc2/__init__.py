@@ -86,7 +86,7 @@ class Instrument(_InstrumentLL):
     """
 
     def __init__(self, port: int, firmware: str):
-        super(Instrument, self).__init__(port, firmware)
+        super(Instrument, self).__init__()
 
     def _array_iter_inner(self, mode: DataMode):
         data = self.pick_one(mode)
