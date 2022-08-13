@@ -6,7 +6,7 @@ use libarc2::ArC2Error as LLArC2Error;
 use libarc2::registers::IOMask;
 use ndarray::{Ix1, Ix2, Array};
 use numpy::{PyArray, PyReadonlyArray};
-use std::convert::{From, Into};
+use std::convert::{From, Into, TryInto};
 use numpy::convert::IntoPyArray;
 use pyo3::prelude::{pymodule, pyclass, pymethods};
 use pyo3::prelude::{PyModule, PyRefMut, PyResult, Python, PyErr};
@@ -659,6 +659,56 @@ impl PyInstrument {
             Err(err) => Err(ArC2Error::new_exception(err))
         }
 
+    }
+
+    /// pulse_slice_fast_open(self, chans, timings, preset_state, /)
+    /// --
+    ///
+    /// Apply a sub-500 ms pulse to all specified channels.  This differs from
+    /// :meth:`~pyarc2.Instrument.pulse_slice` as it does not expect a low potential channel as the
+    /// "receiving" end.  When ``preset_state`` is true the state of high speed drivers will be
+    /// initialised before the actual pulsing sequence begins. ``chans`` is a list of tuples -
+    /// ``[(chan number, pulse voltage, normal voltage), ...]`` - and ``cl_nanos`` contains the
+    /// timings per cluster. ``cl_nanos`` *MUST* be 8-items long or a ``ValueError`` will be
+    /// raised.  A cluster timing can be ``None`` which means that the channels of this cluster
+    /// won't be pulsed at all.  This method will throw an error if a channel is included in the
+    /// ``chans`` list but the channel's corresponding cluster timing, ``int(chan/8)``, is set to
+    /// ``None``.
+    ///
+    /// Be aware that the transition of voltages on channels belonging to the same cluster *must*
+    /// be identical, which effectively means that there can be only one type of transition from
+    /// pulse voltage to normal voltage per 8 consecutive channels (so high → low or low → high).
+    /// If mixed transitions are provided an error will be raised.
+    ///
+    /// Also note that this function uses only the high speed drivers of ArC2 for pulse generation.
+    /// As such the maximum pulse width is limited to 500 ms. If you want longer pulses you can get
+    /// the same behaviour with a chain of :meth:`~pyarc2.Instrument.config_channels()` and
+    /// :meth:`~pyarc2.Instrument.delay()` instructions.
+    ///
+    /// :param list chans: A list of triples containing the configuration of the selected
+    ///                    channels in the form ``(chan number, pulse voltage, normal voltage)``
+    /// :param list cl_nanos: A list of 8 values containing the cluster timings (pulse widths)
+    ///                       in nanoseconds - can be ``None`` which will effectively skip the
+    ///                       cluster altogether
+    /// :param bool preset_state: Whether the high speed drivers should be preloaded before
+    ///                           the actual pulsing
+    ///
+    /// :raises ValueError: When the timings list contains more or fewer than 8 elements
+    /// :raises ~pyarc2.ArC2Error: When incorrect timings or incompatible channel polarities
+    ///                           are supplied.
+    fn pulse_slice_fast_open<'py>(mut slf: PyRefMut<'py, Self>, chans: Vec<(usize, f32, f32)>,
+        cl_nanos: Vec<Option<u128>>, preset_state: bool) -> PyResult<PyRefMut<'py, Self>> {
+
+        if cl_nanos.len() != 8 {
+            return Err(exceptions::PyValueError::new_err("Need 8 arguments for cluster timings"));
+        }
+
+        let actual_cl_nanos: [Option<u128>; 8] = cl_nanos[0..8].try_into()?;
+
+        match slf._instrument.pulse_slice_fast_open(&chans, &actual_cl_nanos, preset_state) {
+            Ok(_) => Ok(slf),
+            Err(err) => Err(ArC2Error::new_exception(err))
+        }
     }
 
     /// pulse_all(self, voltage, nanos, order, /)
