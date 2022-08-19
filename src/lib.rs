@@ -3,7 +3,7 @@ use libarc2::Instrument;
 
 use libarc2::{BiasOrder, ControlMode, DataMode, ReadAt, ReadAfter, find_ids, WaitFor};
 use libarc2::ArC2Error as LLArC2Error;
-use libarc2::registers::IOMask;
+use libarc2::registers::{IOMask, AuxDACFn};
 use ndarray::{Ix1, Ix2, Array};
 use numpy::{PyArray, PyReadonlyArray};
 use std::convert::{From, Into, TryInto};
@@ -352,6 +352,103 @@ impl From<PyWaitFor> for WaitFor {
     }
 }
 
+/// Identifier for selecting auxiliary DAC functions. Typically used
+/// with :meth:`pyarc2.Instrument.config_aux_channels`.
+///
+/// :var SELL: Selector circuit pulls down to this voltage
+/// :var SELH: Selector circuit pulls up to this voltage
+/// :var ARB1: Arbitrary power supply for DUTs - Max current 100 mA
+/// :var ARB2: Arbitrary power supply for DUTs - Max current 100 mA
+/// :var ARB3: Arbitrary power supply for DUTs - Max current 100 mA
+/// :var ARB4: Arbitrary power supply for DUTs - Max current 100 mA
+/// :var CREF: Reference voltage that the current source sources/sinks
+///            current from/to. There should be a ≥3 V headroom between
+///            ``CREF`` and the expected operating point of the the current
+///            source. Must be within 1.5 V of ``CSET`` below.
+/// :var CSET: Sets output current of the current source. The difference
+///            between ``CSET`` and ``CREF` divided by the resistor
+///            selected dictates the output current. This should never
+///            exceed 1.5 V. Must be within 1.5 V of ``CREF`` above.
+#[pyclass(name="AuxDACFn", module="pyarc2")]
+#[derive(Clone)]
+struct PyAuxDACFn { _inner: AuxDACFn }
+
+#[allow(non_snake_case)]
+#[pymethods]
+impl PyAuxDACFn {
+
+    /// Selector circuit pulls down to this voltage
+    #[classattr]
+    fn SELL() -> PyAuxDACFn {
+        PyAuxDACFn { _inner: AuxDACFn::SELL }
+    }
+
+    /// Selector circuit pulls up to this voltage
+    #[classattr]
+    fn SELH() -> PyAuxDACFn {
+        PyAuxDACFn { _inner: AuxDACFn::SELH }
+    }
+
+    /// Arbitrary power supply for DUTs - Max current 100 mA
+    #[classattr]
+    fn ARB1() -> PyAuxDACFn {
+        PyAuxDACFn { _inner: AuxDACFn::ARB1 }
+    }
+
+    /// Arbitrary power supply for DUTs - Max current 100 mA
+    #[classattr]
+    fn ARB2() -> PyAuxDACFn {
+        PyAuxDACFn { _inner: AuxDACFn::ARB2 }
+    }
+
+    /// Arbitrary power supply for DUTs - Max current 100 mA
+    #[classattr]
+    fn ARB3() -> PyAuxDACFn {
+        PyAuxDACFn { _inner: AuxDACFn::ARB3 }
+    }
+
+    /// Arbitrary power supply for DUTs - Max current 100 mA
+    #[classattr]
+    fn ARB4() -> PyAuxDACFn {
+        PyAuxDACFn { _inner: AuxDACFn::ARB4 }
+    }
+
+    /// Reference voltage that the current source sources/sinks
+    /// current from/to. There should be a ≥3 V headroom between
+    /// CREF and the expected operating point of the current source
+    /// Must be within 1 V of CSET.
+    #[classattr]
+    fn CREF() -> PyAuxDACFn {
+        PyAuxDACFn { _inner: AuxDACFn::CREF }
+    }
+
+    /// Sets output current of the current source. The difference
+    /// between CSET and CREF divided by the resistor selected
+    /// dictates the output current. This should never exceed 1.5 V.
+    /// Must be within 1 V of CREF.
+    #[classattr]
+    fn CSET() -> PyAuxDACFn {
+        PyAuxDACFn { _inner: AuxDACFn::CSET }
+    }
+}
+
+impl From<AuxDACFn> for PyAuxDACFn {
+    fn from(func: AuxDACFn) -> Self {
+        PyAuxDACFn { _inner: func }
+    }
+}
+
+impl From<PyAuxDACFn> for AuxDACFn {
+    fn from(func: PyAuxDACFn) -> Self {
+        func._inner
+    }
+}
+
+impl From<&PyAuxDACFn> for AuxDACFn {
+    fn from(func: &PyAuxDACFn) -> Self {
+        func._inner
+    }
+}
 
 /// Catch-all exception for low-level ArC2 errors
 /// --
@@ -504,6 +601,32 @@ impl PyInstrument {
             Ok(_) => Ok(slf),
             Err(err) => Err(ArC2Error::new_exception(err))
         }
+    }
+
+    /// config_aux_channels(self, config, base, /)
+    /// --
+    ///
+    /// Configure the ArC2 auxiliary DACs. The AUX DACs manage signals
+    /// required by the peripheral ArC2 circuitry. The only argument is an
+    /// array of tuples containing a list of AUX DAC functions (tuple item #0)
+    /// to set at specified voltage (tuple item #1). The available functions are
+    /// specified by :class:`~pyarc2.AuxDACFn`.
+    ///
+    /// :param voltages: An array of tuples ``[(aux dac fn, voltage), ...]``
+    fn config_aux_channels<'py>(mut slf: PyRefMut<'py, Self>, voltages: Vec<(PyAuxDACFn, f32)>)
+        -> PyResult<PyRefMut<'py, Self>> {
+
+        let rust_input: Vec<(AuxDACFn, f32)> =
+            voltages.iter().map(|item| {
+                let dac: AuxDACFn = (&item.0).into();
+                (dac, item.1)
+            }).collect();
+
+        match slf._instrument.config_aux_channels(&rust_input) {
+            Ok(_) => Ok(slf),
+            Err(err) => Err(ArC2Error::new_exception(err))
+        }
+
     }
 
     /// read_one(self, low, high, vread, /)
@@ -1052,6 +1175,7 @@ fn pyarc2(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyReadAt>()?;
     m.add_class::<PyReadAfter>()?;
     m.add_class::<PyWaitFor>()?;
+    m.add_class::<PyAuxDACFn>()?;
     m.add("ArC2Error", py.get_type::<ArC2Error>())?;
 
     Ok(())

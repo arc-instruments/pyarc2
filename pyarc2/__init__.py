@@ -1,5 +1,5 @@
 from .pyarc2 import InstrumentLL as _InstrumentLL
-from .pyarc2 import BiasOrder, ControlMode, DataMode, WaitFor
+from .pyarc2 import BiasOrder, ControlMode, DataMode, WaitFor, AuxDACFn
 from .pyarc2 import ReadAt, ReadAfter, ArC2Error
 from .pyarc2 import find_ids
 
