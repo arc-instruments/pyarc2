@@ -659,7 +659,8 @@ impl PyInstrument {
     ///          at ``chan``
     /// :rtype: A numpy f32 array
     fn read_slice<'py>(&mut self, py: Python<'py>, chan: usize, vread: f32) -> &'py PyArray<f32, Ix1> {
-        self._instrument.read_slice_as_ndarray(chan, vread).unwrap().into_pyarray(py)
+        let array = Array::from(self._instrument.read_slice(chan, vread).unwrap());
+        array.into_pyarray(py)
     }
 
     /// read_slice_masked(self, chan, mask, vread, /)
@@ -681,7 +682,9 @@ impl PyInstrument {
         mask: PyReadonlyArray<usize, Ix1>, vread: f32) -> &'py PyArray<f32, Ix1> {
 
         let slice = mask.as_slice().unwrap();
-        self._instrument.read_slice_masked_as_ndarray(chan, slice, vread).unwrap().into_pyarray(py)
+        let array = Array::from(self._instrument.read_slice_masked(chan, slice, vread).unwrap());
+
+        array.into_pyarray(py)
     }
 
     /// read_all(self, vread, order, /)
@@ -697,7 +700,11 @@ impl PyInstrument {
     ///          cronsspoint
     /// :rtype: A numpy (2, 2) f32 ndarray
     fn read_all<'py>(&mut self, py: Python<'py>, vread: f32, order: PyBiasOrder) -> &'py PyArray<f32, Ix2> {
-        self._instrument.read_all_as_ndarray(vread, order.into()).unwrap().into_pyarray(py)
+
+        let data = self._instrument.read_all(vread, order.into()).unwrap();
+        let array = Array::from_shape_vec((32, 32), data).unwrap();
+
+        array.into_pyarray(py)
     }
 
     /// read_slice_open(self, highs, ground_after, /)
@@ -886,8 +893,10 @@ impl PyInstrument {
     /// :rtype: A numpy f32 array
     fn pulseread_slice<'py>(&mut self, py: Python<'py>, chan: usize, vpulse: f32,
         nanos: u128, vread: f32) -> &'py PyArray<f32, Ix1> {
-        self._instrument.pulseread_slice_as_ndarray(chan, vpulse, nanos, vread)
-            .unwrap().into_pyarray(py)
+
+        let data = self._instrument.pulseread_slice(chan, vpulse, nanos, vread).unwrap();
+        Array::from(data).into_pyarray(py)
+
     }
 
     /// pulseread_slice_masked(self, chan, mask, vpulse, nanos, vread, /)
@@ -911,9 +920,9 @@ impl PyInstrument {
         vread: f32) -> &'py PyArray<f32, Ix1> {
 
         let slice = mask.as_slice().unwrap();
-        self._instrument.pulseread_slice_masked_as_ndarray(chan, slice, vpulse, nanos, vread)
-            .unwrap()
-            .into_pyarray(py)
+        let data = self._instrument.pulseread_slice_masked(chan, slice, vpulse, nanos, vread)
+            .unwrap();
+        Array::from(data).into_pyarray(py)
     }
 
     /// pulseread_all(self, vpulse, nanos, vread, order, /)
@@ -934,8 +943,11 @@ impl PyInstrument {
     fn pulseread_all<'py>(&mut self, py: Python<'py>, vpulse: f32, nanos: u128,
         vread: f32, order: PyBiasOrder) -> &'py PyArray<f32, Ix2> {
 
-        self._instrument.pulseread_all_as_ndarray(vpulse, nanos, vread, order.into())
-            .unwrap().into_pyarray(py)
+        let data = self._instrument.pulseread_all(vpulse, nanos, vread, order.into())
+            .unwrap();
+
+        Array::from_shape_vec((32, 32), data).unwrap().into_pyarray(py)
+
     }
 
 
