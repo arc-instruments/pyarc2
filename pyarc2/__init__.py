@@ -1,5 +1,5 @@
 from .pyarc2 import InstrumentLL as _InstrumentLL
-from .pyarc2 import BiasOrder, ControlMode, DataMode, WaitFor, AuxDACFn
+from .pyarc2 import BiasOrder, ControlMode, DataMode, ReadType, WaitFor, AuxDACFn
 from .pyarc2 import ReadAt, ReadAfter, ArC2Error
 from .pyarc2 import find_ids
 
@@ -88,13 +88,13 @@ class Instrument(_InstrumentLL):
     def __init__(self, port: int, firmware: str):
         _InstrumentLL.__init__(port, firmware)
 
-    def _array_iter_inner(self, mode: DataMode):
-        data = self.pick_one(mode)
+    def _array_iter_inner(self, mode: DataMode, rtype: ReadType):
+        data = self.pick_one(mode, rtype)
         if data is None:
             return None
         return [data]
 
-    def get_iter(self, mode: DataMode):
+    def get_iter(self, mode: DataMode, rtype: Optional[ReadType] = None):
         """
         Return an iteration on the internal data buffer. This allows
         users to iterate through the saved results on ArC2's memory
@@ -114,7 +114,11 @@ class Instrument(_InstrumentLL):
         :param mode: A variant of :class:`pyarc2.DataMode`
         :return: An iterator on the internal data buffer
         """
-        fn = partial(self._array_iter_inner, mode)
+
+        if rtype is None:
+            rtype = ReadType.Current
+
+        fn = partial(self._array_iter_inner, mode, rtype)
         return iter(fn, None)
 
     def finalise_operation(self, mode: Optional[DataMode] = None, control: Optional[ControlMode] = None):
@@ -191,3 +195,7 @@ class Instrument(_InstrumentLL):
     @_inheritdocs(_InstrumentLL.currents_from_address)
     def currents_from_address(self, addr: int, chans: IntIterable) -> np.ndarray:
         return super().currents_from_address(addr, _ndarray_check(chans))
+
+    @_inheritdocs(_InstrumentLL.vread_channels)
+    def vread_channels(self, chans: IntIterable, averaging: bool) -> List[float]:
+        return super().vread_channels(_ndarray_check(chans), averaging)

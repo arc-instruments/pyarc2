@@ -1,7 +1,7 @@
 #[cfg(all(any(target_os = "windows", target_os = "linux"), target_arch = "x86_64"))]
 use libarc2::Instrument;
 
-use libarc2::{BiasOrder, ControlMode, DataMode, ReadAt, ReadAfter, find_ids, WaitFor};
+use libarc2::{BiasOrder, ControlMode, DataMode, ReadAt, ReadAfter, ReadType, find_ids, WaitFor};
 use libarc2::ArC2Error as LLArC2Error;
 use libarc2::registers::{IOMask, AuxDACFn};
 use ndarray::{Ix1, Ix2, Array};
@@ -299,6 +299,37 @@ impl From<DataMode> for PyDataMode {
 impl From<PyDataMode> for DataMode {
     fn from(mode: PyDataMode) -> Self {
         mode._inner
+    }
+}
+
+#[pyclass(name="ReadType", module="pyarc2")]
+#[derive(Clone)]
+struct PyReadType { _inner: ReadType }
+
+#[allow(non_snake_case)]
+#[pymethods]
+impl PyReadType {
+
+    #[classattr]
+    fn Current() -> PyReadType {
+        PyReadType { _inner: ReadType::Current }
+    }
+
+    #[classattr]
+    fn Voltage() -> PyReadType {
+        PyReadType { _inner: ReadType::Voltage }
+    }
+}
+
+impl From<ReadType> for PyReadType {
+    fn from(rtype: ReadType) -> Self {
+        PyReadType { _inner: rtype }
+    }
+}
+
+impl From<PyReadType> for ReadType {
+    fn from(rtype: PyReadType) -> Self {
+        rtype._inner
     }
 }
 
@@ -950,6 +981,21 @@ impl PyInstrument {
 
     }
 
+    /// vread_channels(self, chans, averaging, /)
+    /// --
+    ///
+    /// Do a voltage read across selected channels.
+    ///
+    /// :param chans: A uint64 numpy array or Iterable of the channels to
+    ///               read voltage from
+    /// :param bool averaging: Whether averaging should be used
+    ///
+    /// :rtype: An array with the voltage readings of the selected channels
+    ///         in ascending order
+    fn vread_channels(&mut self, chans: PyReadonlyArray<usize, Ix1>, averaging: bool) -> Vec<f32> {
+        let slice = chans.as_slice().unwrap();
+        self._instrument.vread_channels(slice, averaging).unwrap()
+    }
 
     /// execute(self, /)
     /// --
@@ -1131,15 +1177,19 @@ impl PyInstrument {
     /// the memory area after reading.
     ///
     /// :param mode: A variant of :class:`pyarc2.DataMode`.
+    /// :param rtype: A variant of :class:`pyarc2.ReadType`. Use `Current` to
+    ///               decode values into current readings or `Voltage` to
+    ///               decode them into voltage readings
     /// :return: An array with 64 (if ``DataMode.All``) or 32 (for any other
     ///          ``DataMode`` variant) floats
     /// :rtype: An f32 numpy array
-    fn pick_one<'py>(&mut self, py: Python<'py>, mode: PyDataMode) ->
+    fn pick_one<'py>(&mut self, py: Python<'py>, mode: PyDataMode, rtype: PyReadType) ->
         PyResult<Option<&'py PyArray<f32, Ix1>>> {
 
         let mode: DataMode = mode.into();
+        let rtype: ReadType = rtype.into();
 
-        match self._instrument.pick_one(mode) {
+        match self._instrument.pick_one(mode, rtype) {
             Ok(data_opt) => {
                 match data_opt {
                     Some(data) => {
@@ -1184,6 +1234,7 @@ fn pyarc2(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyBiasOrder>()?;
     m.add_class::<PyControlMode>()?;
     m.add_class::<PyDataMode>()?;
+    m.add_class::<PyReadType>()?;
     m.add_class::<PyReadAt>()?;
     m.add_class::<PyReadAfter>()?;
     m.add_class::<PyWaitFor>()?;
