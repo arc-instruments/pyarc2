@@ -592,8 +592,8 @@ impl PyInstrument {
     /// Modify previously configured channels by switching them to ground. Use
     /// an empty array to clear.
     ///
-    /// :param chans: The channels to ground; this must be a numpy uint32 array or
-    ///               any Iterable whose elements can be converted to uint32.
+    /// :param chans: The channels to ground; this must be a numpy uint64 array or
+    ///               any Iterable whose elements can be converted to uint64.
     fn connect_to_gnd<'py>(mut slf: PyRefMut<'py, Self>, chans: PyReadonlyArray<usize, Ix1>)
         -> PyResult<PyRefMut<'py, Self>> {
 
@@ -703,8 +703,8 @@ impl PyInstrument {
     /// it's a column read.
     ///
     /// :param int chan: The low voltage channel
-    /// :param mask: The high-voltage channels. This must be a numpy uint32 array or
-    ///              any other Iterable whose elements can be converted to uint32
+    /// :param mask: The high-voltage channels. This must be a numpy uint64 array or
+    ///              any other Iterable whose elements can be converted to uint64
     /// :param float vread: The voltage to read at
     /// :return: The current of each selected channel along the ``chan`` line sinked
     ///          at ``chan``; unselected channels will default to ``NaN``
@@ -746,8 +746,8 @@ impl PyInstrument {
     /// If ``ground_after`` is True or None a ground operation will additionally be issued
     /// post-read.
     ///
-    /// :param highs: The channels to read currents from. This must be a numpy uint32 or
-    ///               an Iterable whose elements can be converted to uint32
+    /// :param highs: The channels to read currents from. This must be a numpy uint64 or
+    ///               an Iterable whose elements can be converted to uint64
     /// :param bool ground_after: Whether channels will be grounded automatically after
     ///                           current is read
     /// :rtype: A numpy f32 array
@@ -939,7 +939,7 @@ impl PyInstrument {
     ///
     /// :param int chan: The low voltage channel
     /// :param mask: A numpy array or Iterable with the high-voltage channels.
-    ///              Elements must be uint32 or convertible to uint32
+    ///              Elements must be uint64 or convertible to uint64
     /// :param float vpulse: The pulsing voltage
     /// :param int nanos: The pulse duration in nanoseconds
     /// :param float vread: The voltage to read at
@@ -1063,8 +1063,8 @@ impl PyInstrument {
     ///
     /// :param int addr: The memory address to read currents from
     /// :param chans: The channel numbers to retrieve values from. This must be a
-    ///               numpy uint32 array or any Iterable whose elements can be
-    ///               converted to uint32.
+    ///               numpy uint64 array or any Iterable whose elements can be
+    ///               converted to uint64.
     /// :return: An array with the currents of selected channels; unselected channels
     ///          will be replaced with ``Nan``
     /// :rtype: A numpy f32 array
