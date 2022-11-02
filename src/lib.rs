@@ -615,6 +615,28 @@ impl PyInstrument {
         }
     }
 
+    /// open_channels(self, channels, /)
+    /// --
+    ///
+    /// Set selected channels to open, disconnecting them from the DACs. This alone is
+    /// not enough to float a channel because it might be grounded previously. To
+    /// properly float a channel you will have to disconnect the channels from ground
+    /// first. This example floats all channels properly.
+    ///
+    /// >>> arc.connect_to_gnd([])  # clear grounds
+    /// >>>    .open_channels(list(range(64))) # set channels to open
+    /// >>>    .execute()
+    ///
+    /// :param channels: An array of uint64s or any Iterable with elements that can
+    ///                  be converted into uint64
+    fn open_channels<'py>(mut slf: PyRefMut<'py, Self>, channels: Vec<usize>) ->
+        PyResult<PyRefMut<'py, Self>> {
+
+        match slf._instrument.open_channels(&channels) {
+            Ok(_) => Ok(slf),
+            Err(err) => Err(ArC2Error::new_exception(err))
+        }
+    }
 
     /// config_channels(self, config, base, /)
     /// --
@@ -624,7 +646,7 @@ impl PyInstrument {
     /// :param config: An array of tuples ``[(channel, voltage), ...]`` specifying
     ///                the voltage configuration.
     /// :param base: Voltage to set all channel *not* included in ``config``.
-    ///              Set to ``None`` to leave them at their previous state.
+    ///              Set to ``None`` to leave them at their current state.
     fn config_channels<'py>(mut slf: PyRefMut<'py, Self>, input: Vec<(u16, f32)>, base: Option<f32>)
         -> PyResult<PyRefMut<'py, Self>> {
 
