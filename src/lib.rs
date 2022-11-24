@@ -12,6 +12,7 @@ use pyo3::prelude::{pymodule, pyclass, pymethods};
 use pyo3::prelude::{PyModule, PyRefMut, PyResult, Python, PyErr};
 use pyo3::create_exception;
 use pyo3::exceptions;
+use pyo3::intern;
 
 
 /// BiasOrder is used in combination with the multi-crosspoint pulse and
@@ -1262,6 +1263,8 @@ fn pyarc2(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyWaitFor>()?;
     m.add_class::<PyAuxDACFn>()?;
     m.add("ArC2Error", py.get_type::<ArC2Error>())?;
+
+    m.setattr(intern!(m.py(), "LIBARC2_VERSION"), libarc2::LIBARC2_VERSION)?;
 
     Ok(())
 }

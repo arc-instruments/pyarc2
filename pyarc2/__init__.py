@@ -2,6 +2,10 @@ from .pyarc2 import InstrumentLL as _InstrumentLL
 from .pyarc2 import BiasOrder, ControlMode, DataMode, ReadType, WaitFor, AuxDACFn
 from .pyarc2 import ReadAt, ReadAfter, ArC2Error
 from .pyarc2 import find_ids
+try:
+    from .pyarc2 import LIBARC2_VERSION
+except (AttributeError, ImportError):
+    LIBARC2_VERSION = None
 
 from collections.abc import Iterable
 from dataclasses import dataclass
