@@ -38,15 +38,20 @@ classifiers = [
   "Topic :: Software Development :: Libraries :: Python Modules"
 ]
 
+dependencies = [
+  "python>=3.8",
+  "numpy>=1.18"
+]
+
 [tool.poetry.dependencies]
 python = ">=3.8"
 numpy = ">=1.18"
 
 [tool.poetry.dev-dependencies]
 wheel = "*"
-maturin = "^0.13"
+maturin = "^0.14"
 delvewheel = [{ version = "^0.0.22", platform = 'win32' }]
 
 [build-system]
-requires = ["setuptools", "wheel", "maturin==0.13"]
+requires = ["setuptools", "wheel", "maturin==0.14"]
 build-backend = "maturin"

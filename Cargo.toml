@@ -38,12 +38,12 @@ name = "pyarc2"
 crate-type = ["cdylib", "lib"]
 
 [dependencies]
-numpy = "0.16"
+numpy = "0.17"
 ndarray = "0.15"
 libarc2 = { git = "https://github.com/arc-instruments/libarc2" }
 
 [dependencies.pyo3]
-version = "0.16"
+version = "0.17"
 features = ["extension-module"]
 
 [features]
