@@ -25,7 +25,7 @@ jobs:
       - name: Link /io
         run: ln -s /__w/pyarc2 /io
       - name: Run build script
-        run: ./build-linux-wheels.sh
+        run: ./build-linux-wheels-2_24.sh
       - name: Gather wheels
         uses: actions/upload-artifact@v3
         with:
