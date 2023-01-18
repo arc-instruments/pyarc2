@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyarc2"
-version = "0.1.2-a0"
+version = "0.2.1-a0"
 description = "High level Python bindings for the libarc2 library"
 authors = ["Spyros Stathopoulos <spyros@arc-instruments.co.uk>"]
 
@@ -9,7 +9,7 @@ authors = ["Spyros Stathopoulos <spyros@arc-instruments.co.uk>"]
 
 [project]
 name = "pyarc2"
-version = "0.1.2-a0"
+version = "0.2.1-a0"
 description = "High level Python bindings for the libarc2 library"
 readme = "README.md"
 authors = [
