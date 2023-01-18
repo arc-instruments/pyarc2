@@ -36,6 +36,16 @@ def latest_tag():
         return None
 
 
+def highest_semver_tag():
+    git = shutil.which('git')
+
+    cmd = [git, 'tag']
+
+    lines = subprocess.check_output(cmd).decode().splitlines()
+
+    return str(max(map(semver.VersionInfo.parse, lines)))
+
+
 def docs_version():
 
     regexp = re.compile('^release\s?=\s?(.*)$')
@@ -99,7 +109,7 @@ if __name__ == "__main__":
             print('Repository versions are not consistent', file=sys.stderr)
             sys.exit(1)
 
-        maxver = latest_tag()
+        maxver = highest_semver_tag()
 
         if maxver is not None and semver.compare(maxver, iver) > 0:
             print('Current repository version is not higher than latest tag; '\
