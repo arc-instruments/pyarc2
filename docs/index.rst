@@ -62,6 +62,7 @@ Contents of this guide
 
    overview
    api
+   protocol
 
 .. _libarc2: https://github.com/arc-instruments/libarc2
 .. _beastlink: https://www.cesys.com/en/our-products/software-ip/beastlink.html

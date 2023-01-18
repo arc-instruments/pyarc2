@@ -2,34 +2,41 @@
 
 # Run it with
 # docker run --rm -v $(dirname $(pwd)):/io \
-#   quay.io/pypa/manylinux_2_24_x86_64 /io/pyarc2/build-linux-wheels.sh
+#   quay.io/pypa/manylinux_2_28_x86_64 /io/pyarc2/build-linux-wheels-2_28.sh
 
 set -ex
 
-apt update
+yum -y update
+yum -y install libusb wget git rpm-build rpmdevtools gcc-c++ udev
 
-apt-get -y install libusb-1.0 libusb-0.1 wget fakeroot build-essential git
+mkdir -p ${HOME}/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
 
 mkdir /cesys
 pushd /cesys
 git clone https://github.com/arc-instruments/beastlink-rs
-cd beastlink-rs/contrib/debian
-
-./make-debian-packages.sh
-
 popd
 
-apt-get -y install /cesys/beastlink-rs/contrib/debian/cesys-udk-lite_1.5.1-1.deb
-apt-get -y install /cesys/beastlink-rs/contrib/debian/beastlink-free_1.0-1.deb
+cp /cesys/beastlink-rs/contrib/redhat/*.spec ${HOME}/rpmbuild/SPECS/
+
+spectool -g -R ${HOME}/rpmbuild/SPECS/cesys-udk-lite.spec
+
+pushd ${HOME}/rpmbuild/SPECS
+rpmbuild -ba cesys-udk-lite.spec
+rpmbuild -ba beastlink-free.spec
+popd
+
+pushd ${HOME}/rpmbuild/RPMS/x86_64
+rpm -i beastlink-free-1.0-1.x86_64.rpm cesys-udk-lite-1.5.1-1.x86_64.rpm
+popd
 
 curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain stable -y
 
 export PATH="${HOME}/.cargo/bin:${PATH}"
-export WHLPLAT=manylinux_2_24_x86_64
+export WHLPLAT=manylinux_2_28_x86_64
 
 cd /io/pyarc2
 
-for PYBIN in /opt/python/cp{38,39,310}*/bin; do
+for PYBIN in /opt/python/cp{38,39,310,311}*/bin; do
     PYEXEC="${PYBIN}/python"
     PIPEXEC="${PYBIN}/pip"
     "${PIPEXEC}" install -U poetry
@@ -42,7 +49,7 @@ for PYBIN in /opt/python/cp{38,39,310}*/bin; do
     PYTHON_SYS_EXECUTABLE=${PYEXEC} PYO3_PYTHON=${PYEXEC} \
             ${PYEXEC} -m poetry run maturin build \
             --release --interpreter ${PYEXEC} \
-            --manylinux off
+            --skip-auditwheel --compatibility off --sdist
 done
 
 for whl in /io/pyarc2/target/wheels/*-linux_x86_64.whl; do

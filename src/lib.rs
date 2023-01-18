@@ -1,15 +1,18 @@
-use libarc2::{Instrument, BiasOrder, ControlMode, DataMode, ReadAt, ReadAfter, find_ids};
-use libarc2::{WaitFor};
+#[cfg(all(any(target_os = "windows", target_os = "linux"), target_arch = "x86_64"))]
+use libarc2::Instrument;
+
+use libarc2::{BiasOrder, ControlMode, DataMode, ReadAt, ReadAfter, ReadType, find_ids, WaitFor};
 use libarc2::ArC2Error as LLArC2Error;
-use libarc2::registers::IOMask;
+use libarc2::registers::{IOMask, AuxDACFn};
 use ndarray::{Ix1, Ix2, Array};
 use numpy::{PyArray, PyReadonlyArray};
-use std::convert::{From, Into};
+use std::convert::{From, Into, TryInto};
 use numpy::convert::IntoPyArray;
 use pyo3::prelude::{pymodule, pyclass, pymethods};
 use pyo3::prelude::{PyModule, PyRefMut, PyResult, Python, PyErr};
 use pyo3::create_exception;
 use pyo3::exceptions;
+use pyo3::intern;
 
 
 /// BiasOrder is used in combination with the multi-crosspoint pulse and
@@ -300,6 +303,37 @@ impl From<PyDataMode> for DataMode {
     }
 }
 
+#[pyclass(name="ReadType", module="pyarc2")]
+#[derive(Clone)]
+struct PyReadType { _inner: ReadType }
+
+#[allow(non_snake_case)]
+#[pymethods]
+impl PyReadType {
+
+    #[classattr]
+    fn Current() -> PyReadType {
+        PyReadType { _inner: ReadType::Current }
+    }
+
+    #[classattr]
+    fn Voltage() -> PyReadType {
+        PyReadType { _inner: ReadType::Voltage }
+    }
+}
+
+impl From<ReadType> for PyReadType {
+    fn from(rtype: ReadType) -> Self {
+        PyReadType { _inner: rtype }
+    }
+}
+
+impl From<PyReadType> for ReadType {
+    fn from(rtype: PyReadType) -> Self {
+        rtype._inner
+    }
+}
+
 /// Wait condition for long running operations, such as
 /// :meth:`pyarc2.Instrument.read_train`.
 #[pyclass(name="WaitFor", module="pyarc2")]
@@ -350,6 +384,103 @@ impl From<PyWaitFor> for WaitFor {
     }
 }
 
+/// Identifier for selecting auxiliary DAC functions. Typically used
+/// with :meth:`pyarc2.Instrument.config_aux_channels`.
+///
+/// :var SELL: Selector circuit pulls down to this voltage
+/// :var SELH: Selector circuit pulls up to this voltage
+/// :var ARB1: Arbitrary power supply for DUTs - Max current 100 mA
+/// :var ARB2: Arbitrary power supply for DUTs - Max current 100 mA
+/// :var ARB3: Arbitrary power supply for DUTs - Max current 100 mA
+/// :var ARB4: Arbitrary power supply for DUTs - Max current 100 mA
+/// :var CREF: Reference voltage that the current source sources/sinks
+///            current from/to. There should be a ≥3 V headroom between
+///            ``CREF`` and the expected operating point of the the current
+///            source. Must be within 1.5 V of ``CSET`` below.
+/// :var CSET: Sets output current of the current source. The difference
+///            between ``CSET`` and ``CREF` divided by the resistor
+///            selected dictates the output current. This should never
+///            exceed 1.5 V. Must be within 1.5 V of ``CREF`` above.
+#[pyclass(name="AuxDACFn", module="pyarc2")]
+#[derive(Clone)]
+struct PyAuxDACFn { _inner: AuxDACFn }
+
+#[allow(non_snake_case)]
+#[pymethods]
+impl PyAuxDACFn {
+
+    /// Selector circuit pulls down to this voltage
+    #[classattr]
+    fn SELL() -> PyAuxDACFn {
+        PyAuxDACFn { _inner: AuxDACFn::SELL }
+    }
+
+    /// Selector circuit pulls up to this voltage
+    #[classattr]
+    fn SELH() -> PyAuxDACFn {
+        PyAuxDACFn { _inner: AuxDACFn::SELH }
+    }
+
+    /// Arbitrary power supply for DUTs - Max current 100 mA
+    #[classattr]
+    fn ARB1() -> PyAuxDACFn {
+        PyAuxDACFn { _inner: AuxDACFn::ARB1 }
+    }
+
+    /// Arbitrary power supply for DUTs - Max current 100 mA
+    #[classattr]
+    fn ARB2() -> PyAuxDACFn {
+        PyAuxDACFn { _inner: AuxDACFn::ARB2 }
+    }
+
+    /// Arbitrary power supply for DUTs - Max current 100 mA
+    #[classattr]
+    fn ARB3() -> PyAuxDACFn {
+        PyAuxDACFn { _inner: AuxDACFn::ARB3 }
+    }
+
+    /// Arbitrary power supply for DUTs - Max current 100 mA
+    #[classattr]
+    fn ARB4() -> PyAuxDACFn {
+        PyAuxDACFn { _inner: AuxDACFn::ARB4 }
+    }
+
+    /// Reference voltage that the current source sources/sinks
+    /// current from/to. There should be a ≥3 V headroom between
+    /// CREF and the expected operating point of the current source
+    /// Must be within 1 V of CSET.
+    #[classattr]
+    fn CREF() -> PyAuxDACFn {
+        PyAuxDACFn { _inner: AuxDACFn::CREF }
+    }
+
+    /// Sets output current of the current source. The difference
+    /// between CSET and CREF divided by the resistor selected
+    /// dictates the output current. This should never exceed 1.5 V.
+    /// Must be within 1 V of CREF.
+    #[classattr]
+    fn CSET() -> PyAuxDACFn {
+        PyAuxDACFn { _inner: AuxDACFn::CSET }
+    }
+}
+
+impl From<AuxDACFn> for PyAuxDACFn {
+    fn from(func: AuxDACFn) -> Self {
+        PyAuxDACFn { _inner: func }
+    }
+}
+
+impl From<PyAuxDACFn> for AuxDACFn {
+    fn from(func: PyAuxDACFn) -> Self {
+        func._inner
+    }
+}
+
+impl From<&PyAuxDACFn> for AuxDACFn {
+    fn from(func: &PyAuxDACFn) -> Self {
+        func._inner
+    }
+}
 
 /// Catch-all exception for low-level ArC2 errors
 /// --
@@ -386,16 +517,18 @@ create_exception!(pyarc2, ArC2Error, exceptions::PyException,
     and (5) Output buffer access errors");
 
 impl ArC2Error {
-    fn new_exception(err: LLArC2Error) -> PyErr {
+    pub fn new_exception(err: LLArC2Error) -> PyErr {
         ArC2Error::new_err(PyArC2Error { _inner: err })
     }
 }
 
+#[cfg(all(any(target_os = "windows", target_os = "linux"), target_arch = "x86_64"))]
 #[pyclass(name="InstrumentLL", module="pyarc2", subclass)]
 pub struct PyInstrument {
     _instrument: Instrument
 }
 
+#[cfg(all(any(target_os = "windows", target_os = "linux"), target_arch = "x86_64"))]
 impl PyInstrument {
 
     /// Returns a reference to the underlying Instrument
@@ -409,6 +542,7 @@ impl PyInstrument {
     }
 }
 
+#[cfg(all(any(target_os = "windows", target_os = "linux"), target_arch = "x86_64"))]
 #[pymethods]
 impl PyInstrument {
 
@@ -416,6 +550,17 @@ impl PyInstrument {
     fn new(id: i32, fw: &str) -> PyResult<Self> {
         match Instrument::open_with_fw(id, fw, true) {
             Ok(instr) => Ok(PyInstrument { _instrument: instr }),
+            Err(err) => Err(ArC2Error::new_exception(err))
+        }
+    }
+
+    /// delay(self, nanos, /)
+    /// --
+    ///
+    /// Insert a delay of ``nanos`` nanoseconds in the command buffer.
+    fn delay<'py>(mut slf: PyRefMut<'py, Self>, nanos: u128) -> PyResult<PyRefMut<'py, Self>> {
+        match slf._instrument.add_delay(nanos) {
+            Ok(_) => Ok(slf),
             Err(err) => Err(ArC2Error::new_exception(err))
         }
     }
@@ -448,7 +593,8 @@ impl PyInstrument {
     /// Modify previously configured channels by switching them to ground. Use
     /// an empty array to clear.
     ///
-    /// :param chans: The channels to ground; this **must** be a numpy uint32 array.
+    /// :param chans: The channels to ground; this must be a numpy uint64 array or
+    ///               any Iterable whose elements can be converted to uint64.
     fn connect_to_gnd<'py>(mut slf: PyRefMut<'py, Self>, chans: PyReadonlyArray<usize, Ix1>)
         -> PyResult<PyRefMut<'py, Self>> {
 
@@ -468,6 +614,73 @@ impl PyInstrument {
             Ok(_) => Ok(slf),
             Err(err) => Err(ArC2Error::new_exception(err))
         }
+    }
+
+    /// open_channels(self, channels, /)
+    /// --
+    ///
+    /// Set selected channels to open, disconnecting them from the DACs. This alone is
+    /// not enough to float a channel because it might be grounded previously. To
+    /// properly float a channel you will have to disconnect the channels from ground
+    /// first. This example floats all channels properly.
+    ///
+    /// >>> arc.connect_to_gnd([])  # clear grounds
+    /// >>>    .open_channels(list(range(64))) # set channels to open
+    /// >>>    .execute()
+    ///
+    /// :param channels: An array of uint64s or any Iterable with elements that can
+    ///                  be converted into uint64
+    fn open_channels<'py>(mut slf: PyRefMut<'py, Self>, channels: Vec<usize>) ->
+        PyResult<PyRefMut<'py, Self>> {
+
+        match slf._instrument.open_channels(&channels) {
+            Ok(_) => Ok(slf),
+            Err(err) => Err(ArC2Error::new_exception(err))
+        }
+    }
+
+    /// config_channels(self, config, base, /)
+    /// --
+    ///
+    /// Configure a set of channels at specific voltages.
+    ///
+    /// :param config: An array of tuples ``[(channel, voltage), ...]`` specifying
+    ///                the voltage configuration.
+    /// :param base: Voltage to set all channel *not* included in ``config``.
+    ///              Set to ``None`` to leave them at their current state.
+    fn config_channels<'py>(mut slf: PyRefMut<'py, Self>, input: Vec<(u16, f32)>, base: Option<f32>)
+        -> PyResult<PyRefMut<'py, Self>> {
+
+        match slf._instrument.config_channels(&input, base) {
+            Ok(_) => Ok(slf),
+            Err(err) => Err(ArC2Error::new_exception(err))
+        }
+    }
+
+    /// config_aux_channels(self, config, base, /)
+    /// --
+    ///
+    /// Configure the ArC2 auxiliary DACs. The AUX DACs manage signals
+    /// required by the peripheral ArC2 circuitry. The only argument is an
+    /// array of tuples containing a list of AUX DAC functions (tuple item #0)
+    /// to set at specified voltage (tuple item #1). The available functions are
+    /// specified by :class:`~pyarc2.AuxDACFn`.
+    ///
+    /// :param voltages: An array of tuples ``[(aux dac fn, voltage), ...]``
+    fn config_aux_channels<'py>(mut slf: PyRefMut<'py, Self>, voltages: Vec<(PyAuxDACFn, f32)>)
+        -> PyResult<PyRefMut<'py, Self>> {
+
+        let rust_input: Vec<(AuxDACFn, f32)> =
+            voltages.iter().map(|item| {
+                let dac: AuxDACFn = (&item.0).into();
+                (dac, item.1)
+            }).collect();
+
+        match slf._instrument.config_aux_channels(&rust_input) {
+            Ok(_) => Ok(slf),
+            Err(err) => Err(ArC2Error::new_exception(err))
+        }
+
     }
 
     /// read_one(self, low, high, vread, /)
@@ -500,7 +713,8 @@ impl PyInstrument {
     ///          at ``chan``
     /// :rtype: A numpy f32 array
     fn read_slice<'py>(&mut self, py: Python<'py>, chan: usize, vread: f32) -> &'py PyArray<f32, Ix1> {
-        self._instrument.read_slice_as_ndarray(chan, vread).unwrap().into_pyarray(py)
+        let array = Array::from(self._instrument.read_slice(chan, vread).unwrap());
+        array.into_pyarray(py)
     }
 
     /// read_slice_masked(self, chan, mask, vread, /)
@@ -512,15 +726,19 @@ impl PyInstrument {
     /// it's a column read.
     ///
     /// :param int chan: The low voltage channel
-    /// :param mask: A numpy array with the high-voltage channels
+    /// :param mask: The high-voltage channels. This must be a numpy uint64 array or
+    ///              any other Iterable whose elements can be converted to uint64
     /// :param float vread: The voltage to read at
     /// :return: The current of each selected channel along the ``chan`` line sinked
     ///          at ``chan``; unselected channels will default to ``NaN``
     /// :rtype: A numpy f32 array
-    fn read_slice_masked<'py>(&mut self, py: Python<'py>, chan: usize, mask: PyReadonlyArray<usize, Ix1>, vread: f32)
-        -> &'py PyArray<f32, Ix1> {
+    fn read_slice_masked<'py>(&mut self, py: Python<'py>, chan: usize,
+        mask: PyReadonlyArray<usize, Ix1>, vread: f32) -> &'py PyArray<f32, Ix1> {
+
         let slice = mask.as_slice().unwrap();
-        self._instrument.read_slice_masked_as_ndarray(chan, slice, vread).unwrap().into_pyarray(py)
+        let array = Array::from(self._instrument.read_slice_masked(chan, slice, vread).unwrap());
+
+        array.into_pyarray(py)
     }
 
     /// read_all(self, vread, order, /)
@@ -536,7 +754,33 @@ impl PyInstrument {
     ///          cronsspoint
     /// :rtype: A numpy (2, 2) f32 ndarray
     fn read_all<'py>(&mut self, py: Python<'py>, vread: f32, order: PyBiasOrder) -> &'py PyArray<f32, Ix2> {
-        self._instrument.read_all_as_ndarray(vread, order.into()).unwrap().into_pyarray(py)
+
+        let data = self._instrument.read_all(vread, order.into()).unwrap();
+        let array = Array::from_shape_vec((32, 32), data).unwrap();
+
+        array.into_pyarray(py)
+    }
+
+    /// read_slice_open(self, highs, ground_after, /)
+    /// --
+    ///
+    /// Perform an open current measurement along the specified channels. This method does not do
+    /// any bias-related setup. It's up to the user to setup channels before performing the read.
+    /// If ``ground_after`` is True or None a ground operation will additionally be issued
+    /// post-read.
+    ///
+    /// :param highs: The channels to read currents from. This must be a numpy uint64 or
+    ///               an Iterable whose elements can be converted to uint64
+    /// :param bool ground_after: Whether channels will be grounded automatically after
+    ///                           current is read
+    /// :rtype: A numpy f32 array
+    fn read_slice_open<'py>(&mut self, py: Python<'py>, highs: PyReadonlyArray<usize, Ix1>,
+        ground_after: Option<bool>) -> &'py PyArray<f32, Ix1> {
+
+        let slice = highs.as_slice().unwrap();
+        let ground = ground_after.unwrap_or(true);
+
+        self._instrument.read_slice_open(slice, ground).unwrap().into_pyarray(py)
     }
 
     /// pulse_one(self, low, high, voltage, nanos, /)
@@ -552,7 +796,7 @@ impl PyInstrument {
     fn pulse_one<'py>(mut slf: PyRefMut<'py, Self>, low: usize, high: usize, voltage: f32, nanos: u128)
         -> PyResult<PyRefMut<'py, Self>> {
 
-        match slf._instrument.pulse_one(low, high, voltage, nanos, true) {
+        match slf._instrument.pulse_one(low, high, voltage, nanos) {
             Ok(_) => Ok(slf),
             Err(err) => Err(ArC2Error::new_exception(err))
         }
@@ -570,7 +814,7 @@ impl PyInstrument {
     fn pulse_slice<'py>(mut slf: PyRefMut<'py, Self>, chan: usize, voltage: f32, nanos: u128)
         -> PyResult<PyRefMut<'py, Self>> {
 
-        match slf._instrument.pulse_slice(chan, voltage, nanos, true) {
+        match slf._instrument.pulse_slice(chan, voltage, nanos) {
             Ok(_) => Ok(slf),
             Err(err) => Err(ArC2Error::new_exception(err))
         }
@@ -586,18 +830,69 @@ impl PyInstrument {
     /// :param int chan: The low voltage channel
     /// :param float voltage: The pulsing voltage
     /// :param int nanos: The pulse duration in nanoseconds
-    /// :param mask: A numpy array with the high voltage channels; same
+    /// :param mask: A numpy array or Iterable with the high voltage channels; same
     ///              semantics as :meth:`~pyarc2.Instrument.read_slice_masked`
-    fn pulse_slice_masked<'py>(mut slf: PyRefMut<'py, Self>, chan: usize, voltage: f32, nanos: u128, mask: PyReadonlyArray<usize, Ix1>)
+    fn pulse_slice_masked<'py>(mut slf: PyRefMut<'py, Self>, chan: usize, voltage: f32, nanos: u128,
+        mask: PyReadonlyArray<usize, Ix1>)
         -> PyResult<PyRefMut<'py, Self>> {
 
         let actual_mask = mask.as_slice().unwrap();
 
-        match slf._instrument.pulse_slice_masked(chan, actual_mask, voltage, nanos, true) {
+        match slf._instrument.pulse_slice_masked(chan, actual_mask, voltage, nanos) {
             Ok(_) => Ok(slf),
             Err(err) => Err(ArC2Error::new_exception(err))
         }
 
+    }
+
+    /// pulse_slice_fast_open(self, chans, timings, preset_state, /)
+    /// --
+    ///
+    /// Apply a sub-500 ms pulse to all specified channels.  This differs from
+    /// :meth:`~pyarc2.Instrument.pulse_slice` as it does not expect a low potential channel as the
+    /// "receiving" end.  When ``preset_state`` is true the state of high speed drivers will be
+    /// initialised before the actual pulsing sequence begins. ``chans`` is a list of tuples -
+    /// ``[(chan number, pulse voltage, normal voltage), ...]`` - and ``cl_nanos`` contains the
+    /// timings per cluster. ``cl_nanos`` *MUST* be 8-items long or a ``ValueError`` will be
+    /// raised.  A cluster timing can be ``None`` which means that the channels of this cluster
+    /// won't be pulsed at all.  This method will throw an error if a channel is included in the
+    /// ``chans`` list but the channel's corresponding cluster timing, ``int(chan/8)``, is set to
+    /// ``None``.
+    ///
+    /// Be aware that the transition of voltages on channels belonging to the same cluster *must*
+    /// be identical, which effectively means that there can be only one type of transition from
+    /// pulse voltage to normal voltage per 8 consecutive channels (so high → low or low → high).
+    /// If mixed transitions are provided an error will be raised.
+    ///
+    /// Also note that this function uses only the high speed drivers of ArC2 for pulse generation.
+    /// As such the maximum pulse width is limited to 500 ms. If you want longer pulses you can get
+    /// the same behaviour with a chain of :meth:`~pyarc2.Instrument.config_channels()` and
+    /// :meth:`~pyarc2.Instrument.delay()` instructions.
+    ///
+    /// :param list chans: A list of triples containing the configuration of the selected
+    ///                    channels in the form ``(chan number, pulse voltage, normal voltage)``
+    /// :param list cl_nanos: A list of 8 values containing the cluster timings (pulse widths)
+    ///                       in nanoseconds - can be ``None`` which will effectively skip the
+    ///                       cluster altogether
+    /// :param bool preset_state: Whether the high speed drivers should be preloaded before
+    ///                           the actual pulsing
+    ///
+    /// :raises ValueError: When the timings list contains more or fewer than 8 elements
+    /// :raises ~pyarc2.ArC2Error: When incorrect timings or incompatible channel polarities
+    ///                           are supplied.
+    fn pulse_slice_fast_open<'py>(mut slf: PyRefMut<'py, Self>, chans: Vec<(usize, f32, f32)>,
+        cl_nanos: Vec<Option<u128>>, preset_state: bool) -> PyResult<PyRefMut<'py, Self>> {
+
+        if cl_nanos.len() != 8 {
+            return Err(exceptions::PyValueError::new_err("Need 8 arguments for cluster timings"));
+        }
+
+        let actual_cl_nanos: [Option<u128>; 8] = cl_nanos[0..8].try_into()?;
+
+        match slf._instrument.pulse_slice_fast_open(&chans, &actual_cl_nanos, preset_state) {
+            Ok(_) => Ok(slf),
+            Err(err) => Err(ArC2Error::new_exception(err))
+        }
     }
 
     /// pulse_all(self, voltage, nanos, order, /)
@@ -611,7 +906,7 @@ impl PyInstrument {
     fn pulse_all<'py>(mut slf: PyRefMut<'py, Self>, voltage: f32, nanos: u128, order: PyBiasOrder)
         -> PyResult<PyRefMut<'py, Self>> {
 
-        match slf._instrument.pulse_all(voltage, nanos, order.into(), true) {
+        match slf._instrument.pulse_all(voltage, nanos, order.into()) {
             Ok(_) => Ok(slf),
             Err(err) => Err(ArC2Error::new_exception(err))
         }
@@ -652,8 +947,10 @@ impl PyInstrument {
     /// :rtype: A numpy f32 array
     fn pulseread_slice<'py>(&mut self, py: Python<'py>, chan: usize, vpulse: f32,
         nanos: u128, vread: f32) -> &'py PyArray<f32, Ix1> {
-        self._instrument.pulseread_slice_as_ndarray(chan, vpulse, nanos, vread)
-            .unwrap().into_pyarray(py)
+
+        let data = self._instrument.pulseread_slice(chan, vpulse, nanos, vread).unwrap();
+        Array::from(data).into_pyarray(py)
+
     }
 
     /// pulseread_slice_masked(self, chan, mask, vpulse, nanos, vread, /)
@@ -664,7 +961,8 @@ impl PyInstrument {
     /// and :meth:`~pyarc2.Instrument.read_slice_masked` apply.
     ///
     /// :param int chan: The low voltage channel
-    /// :param mask: A numpy array with the high-voltage channels
+    /// :param mask: A numpy array or Iterable with the high-voltage channels.
+    ///              Elements must be uint64 or convertible to uint64
     /// :param float vpulse: The pulsing voltage
     /// :param int nanos: The pulse duration in nanoseconds
     /// :param float vread: The voltage to read at
@@ -676,9 +974,9 @@ impl PyInstrument {
         vread: f32) -> &'py PyArray<f32, Ix1> {
 
         let slice = mask.as_slice().unwrap();
-        self._instrument.pulseread_slice_masked_as_ndarray(chan, slice, vpulse, nanos, vread)
-            .unwrap()
-            .into_pyarray(py)
+        let data = self._instrument.pulseread_slice_masked(chan, slice, vpulse, nanos, vread)
+            .unwrap();
+        Array::from(data).into_pyarray(py)
     }
 
     /// pulseread_all(self, vpulse, nanos, vread, order, /)
@@ -699,10 +997,28 @@ impl PyInstrument {
     fn pulseread_all<'py>(&mut self, py: Python<'py>, vpulse: f32, nanos: u128,
         vread: f32, order: PyBiasOrder) -> &'py PyArray<f32, Ix2> {
 
-        self._instrument.pulseread_all_as_ndarray(vpulse, nanos, vread, order.into())
-            .unwrap().into_pyarray(py)
+        let data = self._instrument.pulseread_all(vpulse, nanos, vread, order.into())
+            .unwrap();
+
+        Array::from_shape_vec((32, 32), data).unwrap().into_pyarray(py)
+
     }
 
+    /// vread_channels(self, chans, averaging, /)
+    /// --
+    ///
+    /// Do a voltage read across selected channels.
+    ///
+    /// :param chans: A uint64 numpy array or Iterable of the channels to
+    ///               read voltage from
+    /// :param bool averaging: Whether averaging should be used
+    ///
+    /// :rtype: An array with the voltage readings of the selected channels
+    ///         in ascending order
+    fn vread_channels(&mut self, chans: PyReadonlyArray<usize, Ix1>, averaging: bool) -> Vec<f32> {
+        let slice = chans.as_slice().unwrap();
+        self._instrument.vread_channels(slice, averaging).unwrap()
+    }
 
     /// execute(self, /)
     /// --
@@ -769,11 +1085,15 @@ impl PyInstrument {
     /// the channel values stored in the segment in ascending channel order
     ///
     /// :param int addr: The memory address to read currents from
-    /// :param chans: The channel numbers to retrieve values from
+    /// :param chans: The channel numbers to retrieve values from. This must be a
+    ///               numpy uint64 array or any Iterable whose elements can be
+    ///               converted to uint64.
     /// :return: An array with the currents of selected channels; unselected channels
     ///          will be replaced with ``Nan``
     /// :rtype: A numpy f32 array
-    fn currents_from_address<'py>(&self, py: Python<'py>, addr: u32, chans: PyReadonlyArray<usize, Ix1>) -> PyResult<&'py PyArray<f32, Ix1>> {
+    fn currents_from_address<'py>(&self, py: Python<'py>, addr: u32,
+        chans: PyReadonlyArray<usize, Ix1>) -> PyResult<&'py PyArray<f32, Ix1>> {
+
         match self._instrument.currents_from_address(addr, chans.as_slice().unwrap()) {
             Ok(result) => Ok(Array::from(result).into_pyarray(py)),
             Err(err) => Err(ArC2Error::new_exception(err))
@@ -796,7 +1116,7 @@ impl PyInstrument {
         }
     }
 
-    /// bit_currents_from_address(self, addr, channels, /)
+    /// bit_currents_from_address(self, addr, /)
     /// --
     ///
     /// Read all bit current values from specific address segment. This will return all
@@ -863,10 +1183,11 @@ impl PyInstrument {
     /// :param condition: Variant of :class:`pyarc2.WaitFor` denoting the termination
     ///                   condition for this read train
     fn read_train<'py>(mut slf: PyRefMut<'py, Self>, low: usize, high: usize,
-        vread: f32, interpulse: u64, condition: PyWaitFor) -> PyResult<()> {
+        vread: f32, interpulse: u64, preload: Option<f32>, condition: PyWaitFor)
+        -> PyResult<()> {
 
         match slf._instrument.read_train(low, high, vread, interpulse as u128,
-            condition.into()) {
+            preload, condition.into()) {
             Ok(_) => Ok(()),
             Err(err) => Err(ArC2Error::new_exception(err))
         }
@@ -879,15 +1200,19 @@ impl PyInstrument {
     /// the memory area after reading.
     ///
     /// :param mode: A variant of :class:`pyarc2.DataMode`.
+    /// :param rtype: A variant of :class:`pyarc2.ReadType`. Use `Current` to
+    ///               decode values into current readings or `Voltage` to
+    ///               decode them into voltage readings
     /// :return: An array with 64 (if ``DataMode.All``) or 32 (for any other
     ///          ``DataMode`` variant) floats
     /// :rtype: An f32 numpy array
-    fn pick_one<'py>(&mut self, py: Python<'py>, mode: PyDataMode) ->
+    fn pick_one<'py>(&mut self, py: Python<'py>, mode: PyDataMode, rtype: PyReadType) ->
         PyResult<Option<&'py PyArray<f32, Ix1>>> {
 
         let mode: DataMode = mode.into();
+        let rtype: ReadType = rtype.into();
 
-        match self._instrument.pick_one(mode) {
+        match self._instrument.pick_one(mode, rtype) {
             Ok(data_opt) => {
                 match data_opt {
                     Some(data) => {
@@ -926,14 +1251,20 @@ fn pyarc2(py: Python, m: &PyModule) -> PyResult<()> {
         }
     }
 
+    #[cfg(all(any(target_os = "windows", target_os = "linux"), target_arch = "x86_64"))]
     m.add_class::<PyInstrument>()?;
+
     m.add_class::<PyBiasOrder>()?;
     m.add_class::<PyControlMode>()?;
     m.add_class::<PyDataMode>()?;
+    m.add_class::<PyReadType>()?;
     m.add_class::<PyReadAt>()?;
     m.add_class::<PyReadAfter>()?;
     m.add_class::<PyWaitFor>()?;
+    m.add_class::<PyAuxDACFn>()?;
     m.add("ArC2Error", py.get_type::<ArC2Error>())?;
+
+    m.setattr(intern!(m.py(), "LIBARC2_VERSION"), libarc2::LIBARC2_VERSION)?;
 
     Ok(())
 }

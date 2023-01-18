@@ -25,7 +25,7 @@ jobs:
       - name: Link /io
         run: ln -s /__w/pyarc2 /io
       - name: Run build script
-        run: ./build-linux-wheels.sh
+        run: ./build-linux-wheels-2_24.sh
       - name: Gather wheels
         uses: actions/upload-artifact@v3
         with:
@@ -43,7 +43,7 @@ jobs:
     needs: [releasecheck]
     strategy:
       matrix:
-        python-version: ['3.8', '3.9', '3.10']
+        python-version: ['3.8', '3.9', '3.10', '3.11']
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
@@ -53,14 +53,22 @@ jobs:
       - name: Install required python packages
         run: python -m pip install poetry delvewheel requests
       - name: Set up Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
+        uses: dtolnay/rust-toolchain@stable
       - name: Fetch required libraries
         run: python getbl-win32.py
+      - name: Poetry environment setup 1 of 2
+        run: python -m poetry install
+      - name: Poetry environment setup 2 of 2
+        run: python -m poetry update
       - name: Build
-        run: .\build-win32-wheels.bat
-        shell: cmd
+        run: python -m poetry run maturin build --release --interpreter python.exe
+      - name: Delvewheel
+        run: |
+          $files = Get-ChildItem target\wheels\pyarc2*-win_amd64.whl
+          foreach ($f in $files) {
+            python -m poetry run delvewheel repair --add-path . $f.FullName -w target\wheels
+          }
+        shell: pwsh
       - name: Gather wheels
         uses: actions/upload-artifact@v3
         with:

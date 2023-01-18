@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyarc2"
-version = "0.1.1"
+version = "0.2.0"
 description = "High level Python bindings for the libarc2 library"
 authors = ["Spyros Stathopoulos <spyros@arc-instruments.co.uk>"]
 
@@ -9,7 +9,7 @@ authors = ["Spyros Stathopoulos <spyros@arc-instruments.co.uk>"]
 
 [project]
 name = "pyarc2"
-version = "0.1.1"
+version = "0.2.0"
 description = "High level Python bindings for the libarc2 library"
 readme = "README.md"
 authors = [
@@ -38,15 +38,20 @@ classifiers = [
   "Topic :: Software Development :: Libraries :: Python Modules"
 ]
 
+dependencies = [
+  "python>=3.8",
+  "numpy>=1.18"
+]
+
 [tool.poetry.dependencies]
 python = ">=3.8"
 numpy = ">=1.18"
 
 [tool.poetry.dev-dependencies]
 wheel = "*"
-maturin = "^0.12"
-delvewheel = [{ version = "^0.0.15", platform = 'win32' }]
+maturin = "^0.14"
+delvewheel = [{ version = "^0.0.22", platform = 'win32' }]
 
 [build-system]
-requires = ["setuptools", "wheel", "maturin>=0.11"]
+requires = ["setuptools", "wheel", "maturin==0.14"]
 build-backend = "maturin"

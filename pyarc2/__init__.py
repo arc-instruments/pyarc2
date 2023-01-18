@@ -1,12 +1,44 @@
-from .pyarc2 import InstrumentLL as __InstrumentLL
-from .pyarc2 import BiasOrder, ControlMode, DataMode, WaitFor
+from .pyarc2 import InstrumentLL as _InstrumentLL
+from .pyarc2 import BiasOrder, ControlMode, DataMode, ReadType, WaitFor, AuxDACFn
 from .pyarc2 import ReadAt, ReadAfter, ArC2Error
 from .pyarc2 import find_ids
+try:
+    from .pyarc2 import LIBARC2_VERSION
+except (AttributeError, ImportError):
+    LIBARC2_VERSION = None
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from functools import partial
 from enum import Enum
 import numpy as np
+from ._types import *
+
+
+def _inheritdocs(fromfn: Callable, sep: str="\n"):
+    def _decorator(fn):
+        srcdoc = fromfn.__doc__
+        if fn.__doc__ is None:
+            fn.__doc__ = srcdoc
+        else:
+            fn.__doc__ = sep.join([srcdoc, fn.__doc__])
+        return fn
+    return _decorator
+
+
+def _ndarray_check(arg: IntIterable, ndim: int = 1, typ: NpUint=np.uint64) -> np.ndarray:
+
+    if isinstance(arg, np.ndarray) and arg.dtype == typ and arg.ndim == ndim:
+        return arg
+    elif isinstance(arg, Iterable) and not isinstance(arg, (str, bytes)):
+        a = np.array(arg, dtype=typ)
+        if a.ndim == ndim:
+            return a
+        else:
+            raise TypeError('Invalid argument dimensions, must be: %d, ' \
+                'found %d instead' % (ndim, a.ndim))
+    else:
+        raise TypeError('Invalid argument type, must be an iterable')
 
 
 class IdleMode(Enum):
@@ -37,7 +69,7 @@ class ArC2Config:
     controlMode: ControlMode
 
 
-class Instrument(__InstrumentLL):
+class Instrument(_InstrumentLL):
     """
     To do anything with ArC TWO you will need first to instantiate an
     ``Instrument``. The constructor requires a port number and a path to load
@@ -57,16 +89,16 @@ class Instrument(__InstrumentLL):
     :return: A new instance of ``pyarc2.Instrument``
     """
 
-    def __init__(self, port, firmware):
-        super(Instrument, self).__init__()
+    def __init__(self, port: int, firmware: str):
+        _InstrumentLL.__init__(port, firmware)
 
-    def _array_iter_inner(self, mode):
-        data = self.pick_one(mode)
+    def _array_iter_inner(self, mode: DataMode, rtype: ReadType):
+        data = self.pick_one(mode, rtype)
         if data is None:
             return None
         return [data]
 
-    def get_iter(self, mode):
+    def get_iter(self, mode: DataMode, rtype: Optional[ReadType] = None):
         """
         Return an iteration on the internal data buffer. This allows
         users to iterate through the saved results on ArC2's memory
@@ -86,10 +118,14 @@ class Instrument(__InstrumentLL):
         :param mode: A variant of :class:`pyarc2.DataMode`
         :return: An iterator on the internal data buffer
         """
-        fn = partial(self._array_iter_inner, mode)
+
+        if rtype is None:
+            rtype = ReadType.Current
+
+        fn = partial(self._array_iter_inner, mode, rtype)
         return iter(fn, None)
 
-    def finalise_operation(self, mode=None, control=None):
+    def finalise_operation(self, mode: Optional[DataMode] = None, control: Optional[ControlMode] = None):
         """
         This function is used to safely reset channels and daughterboard
         control at the end of an operation. The available options are outlined
@@ -134,3 +170,36 @@ class Instrument(__InstrumentLL):
             pass
         else:
             raise ArC2Error("Invalid control mode")
+
+    @_inheritdocs(_InstrumentLL.connect_to_gnd)
+    def connect_to_gnd(self, chans: IntIterable) -> 'Instrument':
+        i = super().connect_to_gnd(_ndarray_check(chans))
+        return cast(Instrument, i)
+
+    @_inheritdocs(_InstrumentLL.read_slice_masked)
+    def read_slice_masked(self, chan: int, mask: IntIterable, vread: float) -> np.ndarray:
+        return super().read_slice_masked(chan, _ndarray_check(mask), vread)
+
+    @_inheritdocs(_InstrumentLL.read_slice_open)
+    def read_slice_open(self, highs: IntIterable, ground_after: bool) -> np.ndarray:
+        return super().read_slice_open(_ndarray_check(highs), ground_after)
+
+    @_inheritdocs(_InstrumentLL.pulse_slice_masked)
+    def pulse_slice_masked(self, chan: int, voltage: float, nanos: int,
+        mask: IntIterable) -> 'Instrument':
+        i = super().pulse_slice_masked(chan, voltage, nanos, _ndarray_check(mask))
+        return cast(Instrument, i)
+
+    @_inheritdocs(_InstrumentLL.pulseread_slice_masked)
+    def pulseread_slice_masked(self, chan: int, mask: IntIterable, vpulse: float,
+        nanos: int, vread: float) -> np.ndarray:
+        return super().pulseread_slice_masked(chan, _ndarray_check(mask), vpulse,
+            nanos, vread)
+
+    @_inheritdocs(_InstrumentLL.currents_from_address)
+    def currents_from_address(self, addr: int, chans: IntIterable) -> np.ndarray:
+        return super().currents_from_address(addr, _ndarray_check(chans))
+
+    @_inheritdocs(_InstrumentLL.vread_channels)
+    def vread_channels(self, chans: IntIterable, averaging: bool) -> List[float]:
+        return super().vread_channels(_ndarray_check(chans), averaging)
