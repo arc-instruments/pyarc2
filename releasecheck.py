@@ -26,7 +26,7 @@ def current_tag():
 def latest_tag():
     git = shutil.which('git')
 
-    cmd = [git, 'tag', '--sort=committerdate']
+    cmd = [git, 'tag', '--sort=taggerdate']
 
     lines = subprocess.check_output(cmd).decode().splitlines()
 
