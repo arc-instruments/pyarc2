@@ -39,7 +39,6 @@ classifiers = [
 ]
 
 dependencies = [
-  "python>=3.8",
   "numpy>=1.18"
 ]
 
