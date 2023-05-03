@@ -1170,6 +1170,73 @@ impl PyInstrument {
 
     }
 
+    /// generate_read_train(self, lows, highs, vread, nreads, inter_nanos, ground, /)
+    /// --
+    ///
+    /// Initiate a current read train. This will queue instructions that will read
+    /// currents between ``lows`` and ``highs`` channels. The low channels can be
+    /// ``None`` which means that ArC 2 will do open reads from the high channels.
+    /// Results must be retrieved with an iterator as described in
+    /// :meth:`~pyarc2.Instrument.generate_ramp`.
+    ///
+    /// :param lows: An array of unsinged integers denoting the low channels or ``None``
+    ///              for unbiased open reads
+    /// :param highs: An array of unsigned integeres denoting the channels to read
+    ///               current from
+    /// :param float vread: Read-out voltage
+    /// :param int nreads: Number of current reads to perform
+    /// :param int inter_nanos: Delay (in ns) between subsequent reads; can be 0
+    /// :param bool ground: Whether to ground high and low channels after the
+    ///                     operation
+    fn generate_read_train<'py>(mut slf: PyRefMut<'py, Self>,
+        lows: Option<PyReadonlyArray<usize, Ix1>>, highs: PyReadonlyArray<usize, Ix1>,
+        vread: f32, nreads: usize, inter_nanos: u128, ground: bool)
+        -> PyResult<PyRefMut<'py, Self>> {
+
+            let high_chans = highs.as_slice().unwrap();
+            let low_chans = match lows {
+                Some(chans) => {
+                    let c = chans.as_slice().unwrap();
+                    let mut vec = Vec::with_capacity(c.len());
+                    vec.extend_from_slice(c);
+                    vec
+                }
+                None => vec![]
+            };
+
+            match slf._instrument.generate_read_train(&low_chans, high_chans,
+                vread, nreads, inter_nanos, ground) {
+
+                Ok(_) => Ok(slf),
+                Err(err) => Err(ArC2Error::new_exception(err))
+
+            }
+    }
+
+    /// generate_vread_train(self, uchans, averaging, /)
+    /// --
+    ///
+    /// Initiate a voltage read train. This will queue instructions that will read
+    /// voltages from all ``uchans`` channels. Results must be retrieved with an
+    /// iterator as described in :meth:`~pyarc2.Instrument.generate_ramp`.
+    ///
+    /// :param uchans: An array of unsinged integers to read voltages from
+    /// :param bool averaging: Whether to perform averaged (``True``) or one-shot reads
+    /// (``False``).
+    fn generate_vread_train<'py>(mut slf: PyRefMut<'py, Self>,
+        uchans: PyReadonlyArray<usize, Ix1>, averaging: bool,
+        npulses: usize, inter_nanos: u128) -> PyResult<PyRefMut<'py, Self>> {
+
+        let chans = uchans.as_slice().unwrap();
+
+        match slf._instrument.generate_vread_train(chans, averaging, npulses,
+            inter_nanos) {
+
+            Ok(_) => Ok(slf),
+            Err(err) => Err(ArC2Error::new_exception(err))
+        }
+    }
+
     /// read_train(self, low, high, vread, interpulse, condition, /)
     /// --
     ///
