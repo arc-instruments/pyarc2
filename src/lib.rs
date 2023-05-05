@@ -398,7 +398,7 @@ impl From<PyWaitFor> for WaitFor {
 ///            ``CREF`` and the expected operating point of the the current
 ///            source. Must be within 1.5 V of ``CSET`` below.
 /// :var CSET: Sets output current of the current source. The difference
-///            between ``CSET`` and ``CREF` divided by the resistor
+///            between ``CSET`` and ``CREF`` divided by the resistor
 ///            selected dictates the output current. This should never
 ///            exceed 1.5 V. Must be within 1.5 V of ``CREF`` above.
 #[pyclass(name="AuxDACFn", module="pyarc2")]
@@ -1222,7 +1222,7 @@ impl PyInstrument {
     ///
     /// :param uchans: An array of unsinged integers to read voltages from
     /// :param bool averaging: Whether to perform averaged (``True``) or one-shot reads
-    /// (``False``).
+    ///                        (``False``).
     fn generate_vread_train<'py>(mut slf: PyRefMut<'py, Self>,
         uchans: PyReadonlyArray<usize, Ix1>, averaging: bool,
         npulses: usize, inter_nanos: u128) -> PyResult<PyRefMut<'py, Self>> {
