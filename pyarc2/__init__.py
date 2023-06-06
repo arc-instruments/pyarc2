@@ -128,7 +128,7 @@ class Instrument(_InstrumentLL):
         fn = partial(self._array_iter_inner, mode, rtype)
         return iter(fn, None)
 
-    def finalise_operation(self, mode: Optional[DataMode] = None, control: Optional[ControlMode] = None):
+    def finalise_operation(self, mode: Optional[IdleMode] = None, control: Optional[ControlMode] = None):
         """
         This function is used to safely reset channels and daughterboard
         control at the end of an operation. The available options are outlined
