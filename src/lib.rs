@@ -683,6 +683,38 @@ impl PyInstrument {
 
     }
 
+    /// config_selectors(self, selectors, /)
+    /// --
+    ///
+    /// Configure the ArC2 selector circuits. The array is a list of selector
+    /// channels (0..31) to toggle high. The rest of the selectors will be
+    /// toggled low. This function does not configure the voltage of the low
+    /// and high levels, as this must be done with
+    /// :meth:`~pyarc2.Instrument.config_aux_channels` and setting the high and
+    /// low voltages through the :class:`~pyarc2.AuxDACFn` ``SELH``/``SELL`` variables.
+    /// Perhaps unintuitively the high voltage can actually be configured to be lower
+    /// than low although the usefulness of this choice is questionable.
+    ///
+    /// >>> # the following will set the low and high voltage for selectors to
+    /// >>> # 0.0 and 3.3 V respectively and toggle selectors 9 and 12 to high.
+    /// >>> arc2.config_aux_channels([(AuxDACFn.SELL, 0.0), (AuxDACFn.SELH, 3.3)])
+    /// >>>     .config_selectors([9, 12])
+    /// >>>     .execute()
+    ///
+    /// Voltage configuration need only be provided once as it is sticky.
+    ///
+    /// :param selectors: An array of selectors to toggle high. Use an empty array
+    ///                   to clear all selectors
+    fn config_selectors<'py>(mut slf: PyRefMut<'py, Self>, selectors: Vec<usize>)
+        -> PyResult<PyRefMut<'py, Self>> {
+
+        match slf._instrument.config_selectors(&selectors) {
+            Ok(_) => Ok(slf),
+            Err(err) => Err(ArC2Error::new_exception(err))
+        }
+
+    }
+
     /// read_one(self, low, high, vread, /)
     /// --
     ///
