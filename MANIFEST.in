@@ -1,6 +1,5 @@
 include Cargo.toml
 exclude .gitignore
-exclude build-linux-wheels-2_24.sh
 exclude build-linux-wheels-2_28.sh
 recursive-include src *
 recursive-exclude pyarc2 *so *dll
