@@ -29,10 +29,10 @@ export WHLPLAT=manylinux_2_24_x86_64
 
 cd /io/pyarc2
 
-for PYBIN in /opt/python/cp{38,39,310,311,312}*/bin; do
+for PYBIN in /opt/python/cp{39,310,311,312}*/bin; do
     PYEXEC="${PYBIN}/python"
     PIPEXEC="${PYBIN}/pip"
-    "${PIPEXEC}" install -U poetry
+    "${PIPEXEC}" install -U poetry setuptools
     ${PYEXEC} -m poetry config virtualenvs.in-project false
     ${PYEXEC} -m poetry check
     ${PYEXEC} -m poetry update

@@ -20,7 +20,7 @@ homepage = "http://arc-instruments.co.uk/"
 repository = "https://github.com/arc-instruments/pyarc2"
 license = { text = "MPL-2.0" }
 
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -30,9 +30,10 @@ classifiers = [
   "Operating System :: Microsoft :: Windows :: Windows 8.1",
   "Operating System :: Microsoft :: Windows :: Windows 10",
   "Operating System :: POSIX :: Linux",
-  "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Programming Language :: Rust",
   "Topic :: Scientific/Engineering",
   "Topic :: Software Development :: Libraries :: Python Modules"
@@ -43,14 +44,14 @@ dependencies = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.8"
+python = ">=3.9"
 numpy = ">=1.18"
 
 [tool.poetry.dev-dependencies]
 wheel = "*"
-maturin = "^0.14"
+maturin = "^1.0"
 delvewheel = [{ version = "^0.0.22", platform = 'win32' }]
 
 [build-system]
-requires = ["setuptools", "wheel", "maturin==0.14"]
+requires = ["setuptools", "wheel", "maturin>=1.0,<2.0"]
 build-backend = "maturin"

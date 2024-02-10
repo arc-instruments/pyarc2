@@ -10,8 +10,10 @@ homepage = "http://arc-instruments.co.uk"
 repository = "https://github.com/arc-instruments/pyarc2"
 
 exclude = [
-  "build-linux-wheels.sh",
+  "build-linux-wheels-2_24.sh",
+  "build-linux-wheels-2_28.sh",
   "build-win32-wheels.bat",
+  "build-win32-wheels.ps1",
   "build/*",
   "dist/*",
   "docs/_build",
