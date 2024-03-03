@@ -398,7 +398,7 @@ impl From<PyWaitFor> for WaitFor {
 ///            ``CREF`` and the expected operating point of the the current
 ///            source. Must be within 1.5 V of ``CSET`` below.
 /// :var CSET: Sets output current of the current source. The difference
-///            between ``CSET`` and ``CREF` divided by the resistor
+///            between ``CSET`` and ``CREF`` divided by the resistor
 ///            selected dictates the output current. This should never
 ///            exceed 1.5 V. Must be within 1.5 V of ``CREF`` above.
 #[pyclass(name="AuxDACFn", module="pyarc2")]
@@ -677,6 +677,38 @@ impl PyInstrument {
             }).collect();
 
         match slf._instrument.config_aux_channels(&rust_input) {
+            Ok(_) => Ok(slf),
+            Err(err) => Err(ArC2Error::new_exception(err))
+        }
+
+    }
+
+    /// config_selectors(self, selectors, /)
+    /// --
+    ///
+    /// Configure the ArC2 selector circuits. The array is a list of selector
+    /// channels (0..31) to toggle high. The rest of the selectors will be
+    /// toggled low. This function does not configure the voltage of the low
+    /// and high levels, as this must be done with
+    /// :meth:`~pyarc2.Instrument.config_aux_channels` and setting the high and
+    /// low voltages through the :class:`~pyarc2.AuxDACFn` ``SELH``/``SELL`` variables.
+    /// Perhaps unintuitively the high voltage can actually be configured to be lower
+    /// than low although the usefulness of this choice is questionable.
+    ///
+    /// >>> # the following will set the low and high voltage for selectors to
+    /// >>> # 0.0 and 3.3 V respectively and toggle selectors 9 and 12 to high.
+    /// >>> arc2.config_aux_channels([(AuxDACFn.SELL, 0.0), (AuxDACFn.SELH, 3.3)])
+    /// >>>     .config_selectors([9, 12])
+    /// >>>     .execute()
+    ///
+    /// Voltage configuration need only be provided once as it is sticky.
+    ///
+    /// :param selectors: An array of selectors to toggle high. Use an empty array
+    ///                   to clear all selectors
+    fn config_selectors<'py>(mut slf: PyRefMut<'py, Self>, selectors: Vec<usize>)
+        -> PyResult<PyRefMut<'py, Self>> {
+
+        match slf._instrument.config_selectors(&selectors) {
             Ok(_) => Ok(slf),
             Err(err) => Err(ArC2Error::new_exception(err))
         }
@@ -1168,6 +1200,73 @@ impl PyInstrument {
             Err(err) => Err(ArC2Error::new_exception(err))
         }
 
+    }
+
+    /// generate_read_train(self, lows, highs, vread, nreads, inter_nanos, ground, /)
+    /// --
+    ///
+    /// Initiate a current read train. This will queue instructions that will read
+    /// currents between ``lows`` and ``highs`` channels. The low channels can be
+    /// ``None`` which means that ArC 2 will do open reads from the high channels.
+    /// Results must be retrieved with an iterator as described in
+    /// :meth:`~pyarc2.Instrument.generate_ramp`.
+    ///
+    /// :param lows: An array of unsinged integers denoting the low channels or ``None``
+    ///              for unbiased open reads
+    /// :param highs: An array of unsigned integeres denoting the channels to read
+    ///               current from
+    /// :param float vread: Read-out voltage
+    /// :param int nreads: Number of current reads to perform
+    /// :param int inter_nanos: Delay (in ns) between subsequent reads; can be 0
+    /// :param bool ground: Whether to ground high and low channels after the
+    ///                     operation
+    fn generate_read_train<'py>(mut slf: PyRefMut<'py, Self>,
+        lows: Option<PyReadonlyArray<usize, Ix1>>, highs: PyReadonlyArray<usize, Ix1>,
+        vread: f32, nreads: usize, inter_nanos: u128, ground: bool)
+        -> PyResult<PyRefMut<'py, Self>> {
+
+            let high_chans = highs.as_slice().unwrap();
+            let low_chans = match lows {
+                Some(chans) => {
+                    let c = chans.as_slice().unwrap();
+                    let mut vec = Vec::with_capacity(c.len());
+                    vec.extend_from_slice(c);
+                    vec
+                }
+                None => vec![]
+            };
+
+            match slf._instrument.generate_read_train(&low_chans, high_chans,
+                vread, nreads, inter_nanos, ground) {
+
+                Ok(_) => Ok(slf),
+                Err(err) => Err(ArC2Error::new_exception(err))
+
+            }
+    }
+
+    /// generate_vread_train(self, uchans, averaging, /)
+    /// --
+    ///
+    /// Initiate a voltage read train. This will queue instructions that will read
+    /// voltages from all ``uchans`` channels. Results must be retrieved with an
+    /// iterator as described in :meth:`~pyarc2.Instrument.generate_ramp`.
+    ///
+    /// :param uchans: An array of unsinged integers to read voltages from
+    /// :param bool averaging: Whether to perform averaged (``True``) or one-shot reads
+    ///                        (``False``).
+    fn generate_vread_train<'py>(mut slf: PyRefMut<'py, Self>,
+        uchans: PyReadonlyArray<usize, Ix1>, averaging: bool,
+        npulses: usize, inter_nanos: u128) -> PyResult<PyRefMut<'py, Self>> {
+
+        let chans = uchans.as_slice().unwrap();
+
+        match slf._instrument.generate_vread_train(chans, averaging, npulses,
+            inter_nanos) {
+
+            Ok(_) => Ok(slf),
+            Err(err) => Err(ArC2Error::new_exception(err))
+        }
     }
 
     /// read_train(self, low, high, vread, interpulse, condition, /)

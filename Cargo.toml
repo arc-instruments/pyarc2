@@ -1,6 +1,6 @@
 [package]
 name = "pyarc2"
-version = "0.2.1"
+version = "0.3.0"
 authors = ["Spyros Stathopoulos <spyros@arc-instruments.co.uk>"]
 description = "High level Python bindings for the libarc2 library"
 edition = "2018"
@@ -10,8 +10,9 @@ homepage = "http://arc-instruments.co.uk"
 repository = "https://github.com/arc-instruments/pyarc2"
 
 exclude = [
-  "build-linux-wheels.sh",
+  "build-linux-wheels-2_28.sh",
   "build-win32-wheels.bat",
+  "build-win32-wheels.ps1",
   "build/*",
   "dist/*",
   "docs/_build",
@@ -40,7 +41,7 @@ crate-type = ["cdylib", "lib"]
 [dependencies]
 numpy = "0.17"
 ndarray = "0.15"
-libarc2 = { git = "https://github.com/arc-instruments/libarc2", tag = "0.2.0" }
+libarc2 = { git = "https://github.com/arc-instruments/libarc2", tag = "0.3.0" }
 
 [dependencies.pyo3]
 version = "0.17"

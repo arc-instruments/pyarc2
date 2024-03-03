@@ -330,3 +330,166 @@ Add a delay in the execution chain of ArC TWO. The actual delay value is 320 ns
 plus the value specified in the instruction argument. Delay is calculated on a
 50 MHz clock so the minimum interval is 20 ns. Maximum delay is (2³²−1) × 20 +
 320 ns.
+
+
+C READ: Current Read
+~~~~~~~~~~~~~~~~~~~~
+
+| **OPCODE**: 0x0000_0004
+
+.. list-table:: C READ Arguments
+   :widths: 12 25 12 51
+   :header-rows: 1
+
+   * - Position
+     - Name
+     - Length
+     - Description
+   * - 1
+     - DAC Bitmask
+     - 2 WORDs
+     - Selected channels to read current from (LSB)
+   * - 3
+     - Store address
+     - 1 WORD
+     - Address to save current reading
+   * - 4
+     - Flag address
+     - 1 WORD
+     - Address to populate with Flag after reading
+   * - 5
+     - Flag
+     - 1 WORD
+     - Flag value to use
+
+.. image:: images/instr-c-read.svg
+   :width: 100%
+   :align: center
+
+Perform a current reading across all asserted channels. This operation will not
+do any biasing, implicit or otherwise and voltage differentials must be set with
+the appropriate DAC operations. ArC TWO will populate the current reading in the
+address specified in WORD #3. Since this operation is asynchronous an additional
+flag will be placed in the address specified in WORD #4 to signify that the
+measurement finished successfully. The actual contents of the flag are specified
+in WORD #5. This behaviour is also shared with voltage readings.
+
+
+V READ: Voltage Read
+~~~~~~~~~~~~~~~~~~~~
+
+| **OPCODE**: 0x0000_0008
+
+.. list-table:: V READ Arguments
+   :widths: 12 25 12 51
+   :header-rows: 1
+
+   * - Position
+     - Name
+     - Length
+     - Description
+   * - 1
+     - DAC Bitmask
+     - 2 WORDs
+     - Selected channels to read voltage from (LSB)
+   * - 3
+     - Padding
+     - 31 bits
+     - Fill space to 32 bits
+   * -
+     - Averaging
+     - 1 bit
+     - Assert to enable averaging
+   * - 4
+     - Store address
+     - 1 WORD
+     - Address to save voltage reading
+   * - 5
+     - Flag address
+     - 1 WORD
+     - Address to populate with Flag after reading
+   * - 6
+     - Flag
+     - 1 WORD
+     - Flag value to use
+
+.. image:: images/instr-v-read.svg
+   :width: 100%
+   :align: center
+
+Similar to current reads, perform a voltage reading across all asserted channels.
+If averaging is enabled ArC TWO will average 32 voltage readings of 10 μs (for a
+total of up to 320 μs). Results are handled in the same manner as current readings.
+
+
+UP SEL: Selector Control
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+| **OPCODE**: 0x0000_0010
+
+.. list-table:: UP SEL Arguments
+   :widths: 12 25 12 51
+   :header-rows: 1
+
+   * - Position
+     - Name
+     - Length
+     - Description
+   * - 1
+     - Selector Bitmask
+     - 1 WORDs
+     - Selectors to enable (LSB)
+
+.. image:: images/instr-up-sel.svg
+   :width: 100%
+   :align: center
+
+This instruction manipulates the 32 on-board selector circuits which are
+essentially *output only* I/Os. As such their main use case is toggling gates
+of transistors although they can be operated as additional generic digital
+outputs if required. This operation does not set low and high levels which are
+handled by the auxiliary DACs that can be manipulated with the **LD VOLT**
+instruction.
+
+
+UP LGC: Update Logic
+~~~~~~~~~~~~~~~~~~~~
+
+| **OPCODE**: 0x0000_0020
+
+.. list-table:: UP LGC Arguments
+   :widths: 12 25 12 51
+   :header-rows: 1
+
+   * - Position
+     - Name
+     - Length
+     - Description
+   * - 1
+     - I/O Bitmask
+     - 1 WORDs
+     - I/Os to enable (LSB)
+   * - 2
+     - Padding
+     - 27 bits
+     -
+   * -
+     - Level shifter ENable
+     - 1 bit
+     - Disable level shifters
+   * -
+     - Direction
+     - 4 bits
+     - Direction of I/O cluster (high: output)
+
+.. image:: images/instr-up-lgc.svg
+   :width: 100%
+   :align: center
+
+The Update Logic instruction sets the state of the generic I/O pins. As with
+the selectors the actual voltage level is controlled by **LD VOLT**. WORD #1 is
+the bitmask that controls which of the generic I/Os are set high. The EN bit
+disables the built-in level shifters if asserted. The lower end of WORD #2
+(DIR) controls the direction of the pins. The direction of the I/Os is managed
+in clusters of 8 contiguous pins and if the corresponding bit is asserted the
+cluster channels will be configured as outputs.

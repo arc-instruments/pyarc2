@@ -26,7 +26,10 @@ def _inheritdocs(fromfn: Callable, sep: str="\n"):
     return _decorator
 
 
-def _ndarray_check(arg: IntIterable, ndim: int = 1, typ: NpUint=np.uint64) -> np.ndarray:
+def _ndarray_check(arg: IntIterable, ndim: int = 1, typ: NpUint=np.uint64) -> Optional[np.ndarray]:
+
+    if arg is None:
+        return None
 
     if isinstance(arg, np.ndarray) and arg.dtype == typ and arg.ndim == ndim:
         return arg
@@ -125,7 +128,7 @@ class Instrument(_InstrumentLL):
         fn = partial(self._array_iter_inner, mode, rtype)
         return iter(fn, None)
 
-    def finalise_operation(self, mode: Optional[DataMode] = None, control: Optional[ControlMode] = None):
+    def finalise_operation(self, mode: Optional[IdleMode] = None, control: Optional[ControlMode] = None):
         """
         This function is used to safely reset channels and daughterboard
         control at the end of an operation. The available options are outlined
@@ -203,3 +206,15 @@ class Instrument(_InstrumentLL):
     @_inheritdocs(_InstrumentLL.vread_channels)
     def vread_channels(self, chans: IntIterable, averaging: bool) -> List[float]:
         return super().vread_channels(_ndarray_check(chans), averaging)
+
+    @_inheritdocs(_InstrumentLL.generate_read_train)
+    def generate_read_train(self, lows: Optional[IntIterable], highs: IntIterable,
+        vread: float, nreads: int, inter_nanos: int, ground: bool) -> 'Instrument':
+        return super().generate_read_train(_ndarray_check(lows),
+            _ndarray_check(highs), vread, nreads, inter_nanos, ground)
+
+    @_inheritdocs(_InstrumentLL.generate_vread_train)
+    def generate_vread_train(self, chans: IntIterable, averaging: bool, npulses: int,
+        inter_nanos: int) -> 'Instrument':
+        return super().generate_vread_train(_ndarray_check(chans), averaging, npulses,
+            inter_nanos)
