@@ -179,6 +179,16 @@ class Instrument(_InstrumentLL):
         i = super().connect_to_gnd(_ndarray_check(chans))
         return cast(Instrument, i)
 
+    @_inheritdocs(_InstrumentLL.gnd_add)
+    def gnd_add(self, chans: IntIterable) -> 'Instrument':
+        i = super().gnd_add(_ndarray_check(chans))
+        return cast(Instrument, i)
+
+    @_inheritdocs(_InstrumentLL.gnd_add)
+    def gnd_remove(self, chans: IntIterable) -> 'Instrument':
+        i = super().gnd_remove(_ndarray_check(chans))
+        return cast(Instrument, i)
+
     @_inheritdocs(_InstrumentLL.read_slice_masked)
     def read_slice_masked(self, chan: int, mask: IntIterable, vread: float) -> np.ndarray:
         return super().read_slice_masked(chan, _ndarray_check(mask), vread)
