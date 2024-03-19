@@ -639,6 +639,58 @@ impl PyInstrument {
 
     }
 
+    /// connect_to_ac_gnd(self, chans, /)
+    /// --
+    ///
+    /// Modify previously configured channels by switching them to AC ground. Use
+    /// an empty array to clear.
+    ///
+    /// :param chans: The channels to ground; this must be a numpy uint64 array or
+    ///               any Iterable whose elements can be converted to uint64.
+    fn connect_to_ac_gnd<'py>(mut slf: PyRefMut<'py, Self>, chans: PyReadonlyArray<usize, Ix1>)
+        -> PyResult<PyRefMut<'py, Self>> {
+
+        let slice = chans.as_slice().unwrap();
+        match slf._instrument.connect_to_ac_gnd(slice) {
+            Ok(_) => Ok(slf),
+            Err(err) => Err(ArC2Error::new_exception(err))
+        }
+    }
+
+    /// gnd_ac_add(self, chans, /)
+    /// --
+    ///
+    /// Connect selected channels to AC ground. Unlike
+    /// :meth:`~pyarc2.Instrument.connect_to_ac_gnd` this function will not clear
+    /// previously grounded channels, only add to those.
+    fn gnd_ac_add<'py>(mut slf: PyRefMut<'py, Self>, chans: PyReadonlyArray<usize, Ix1>)
+        -> PyResult<PyRefMut<'py, Self>> {
+
+        let slice = chans.as_slice().unwrap();
+        match slf._instrument.gnd_ac_add(slice) {
+            Ok(_) => Ok(slf),
+            Err(err) => Err(ArC2Error::new_exception(err))
+        }
+
+    }
+
+    /// gnd_ac_remove(self, chans, /)
+    /// --
+    ///
+    /// Disconnect selected channels from AC ground. Unlike
+    /// :meth:`~pyarc2.Instrument.connect_to_ac_gnd` this function will not clear
+    /// previously grounded channels, only remove from those.
+    fn gnd_ac_remove<'py>(mut slf: PyRefMut<'py, Self>, chans: PyReadonlyArray<usize, Ix1>)
+        -> PyResult<PyRefMut<'py, Self>> {
+
+        let slice = chans.as_slice().unwrap();
+        match slf._instrument.gnd_ac_remove(slice) {
+            Ok(_) => Ok(slf),
+            Err(err) => Err(ArC2Error::new_exception(err))
+        }
+
+    }
+
     /// float_all(self, /)
     /// --
     ///
