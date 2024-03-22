@@ -18,11 +18,11 @@
 # -- Project information -----------------------------------------------------
 
 project = 'pyarc2'
-copyright = '2022, ArC Instruments Ltd'
+copyright = '2022–2024, ArC Instruments Ltd'
 author = 'Spyros Stathopoulos'
 
 # The full version, including alpha/beta/rc tags
-release = '0.3.2-a1'
+release = '0.4.2-a0'
 
 
 # -- General configuration ---------------------------------------------------
