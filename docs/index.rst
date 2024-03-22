@@ -1,22 +1,25 @@
-.. pyarc2 documentation master file, created by
-   sphinx-quickstart on Thu Jun  9 20:51:30 2022.
-
 libarc2 Python bindings
 =======================
+
+.. important::
+   If you recently acquired an ArC TWO it is recommended that you go through
+   board's `📖 general documentation`_ first as it provides useful introductory
+   information to get started with your instrument.
 
 ``pyarc2`` provides Python bindings for the Rust libarc2_ library which is the
 low-level library to access the ArC TWO parallel characterisation platform. It
 exposes most of the underlying Rust functionality and allows users to build
 complex programs that leverage the capabilities of ArC TWO. It is recommended
 reading for new users otherwise you can head on straight to the :doc:`API
-reference <api>`. Please note that ``pyarc2`` provides only a veneer around the
-low-level Rust API and its target group is users wanting to develop tailored
-characterisation tools on top of ArC TWO. For general testing usage it is
-recommended that you get started with arc2control_ instead.
+reference <api>`. ``pyarc2`` provides a veneer around the low-level Rust API
+and it is recommended for users wanting to develop tailored characterisation
+tools on top of ArC TWO.
 
 
 Installation
 ------------
+
+Quick links: |pyarc2_github|_ |pyarc2_docs|_ |pyarc2_pypi|_
 
 ``pyarc2`` should be available from pip. For the stable version run
 
@@ -62,7 +65,6 @@ Contents of this guide
 
    overview
    api
-   protocol
 
 .. _libarc2: https://github.com/arc-instruments/libarc2
 .. _beastlink: https://www.cesys.com/en/our-products/software-ip/beastlink.html
@@ -70,3 +72,10 @@ Contents of this guide
 .. _`our repository`: https://github.com/arc-instruments/beastlink-rs/tree/master/contrib
 .. _website: http://arc-instruments.co.uk/
 .. _arc2control: https://github.com/arc-instruments/arc2control
+.. _`📖 general documentation`: https://files.arc-instruments.co.uk/documents/arc2-general
+.. |pyarc2_github| image:: https://img.shields.io/github/v/tag/arc-instruments/pyarc2?logo=github&label=%20
+.. _pyarc2_github: https://github.com/arc-instruments/pyarc2
+.. |pyarc2_docs| image:: https://img.shields.io/badge/-documentation-default
+.. _pyarc2_docs: https://files.arc-instruments.co.uk/documents/pyarc2
+.. |pyarc2_pypi| image:: https://img.shields.io/pypi/v/pyarc2?logo=python&logoColor=white
+.. _pyarc2_pypi: https://pypi.org/project/pyarc2
