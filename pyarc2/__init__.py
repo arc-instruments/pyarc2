@@ -212,6 +212,10 @@ class Instrument(_InstrumentLL):
     def read_slice_open(self, highs: IntIterable, ground_after: bool) -> np.ndarray:
         return super().read_slice_open(_ndarray_check(highs), ground_after)
 
+    @_inheritdocs(_InstrumentLL.read_slice_open_deferred)
+    def read_slice_open_deferred(self, highs: IntIterable, ground_after: bool) -> np.ndarray:
+        return super().read_slice_open_deferred(_ndarray_check(highs), ground_after)
+
     @_inheritdocs(_InstrumentLL.pulse_slice_masked)
     def pulse_slice_masked(self, chan: int, voltage: float, nanos: int,
         mask: IntIterable) -> 'Instrument':

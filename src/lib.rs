@@ -879,6 +879,25 @@ impl PyInstrument {
         array.into_pyarray(py)
     }
 
+    /// read_slice_open_deferred(self, highs, ground_after, /)
+    /// --
+    ///
+    /// Perform an open current measurement along the specified channels without immediately
+    /// returning a value. This can be used in an calling sequence that involves multiple
+    /// steps without flushing the internal command buffer.
+    fn read_slice_open_deferred<'py>(mut slf: PyRefMut<'py, Self>, highs: PyReadonlyArray<usize, Ix1>,
+        ground_after: Option<bool>) -> PyResult<PyRefMut<'py, Self>> {
+
+        let slice = highs.as_slice().unwrap();
+        let ground = ground_after.unwrap_or(true);
+
+        match slf._instrument.read_slice_open_deferred(slice, ground) {
+            Ok(_) => Ok(slf),
+            Err(err) => Err(ArC2Error::new_exception(err))
+        }
+
+    }
+
     /// read_slice_open(self, highs, ground_after, /)
     /// --
     ///
