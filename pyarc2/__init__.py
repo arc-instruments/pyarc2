@@ -236,6 +236,10 @@ class Instrument(_InstrumentLL):
     def vread_channels(self, chans: IntIterable, averaging: bool) -> List[float]:
         return super().vread_channels(_ndarray_check(chans), averaging)
 
+    @_inheritdocs(_InstrumentLL.vread_channels_deferred)
+    def vread_channels_deferred(self, chans: IntIterable, averaging: bool) -> 'Instrument':
+        return super().vread_channels_deferred(_ndarray_check(chans), averaging)
+
     @_inheritdocs(_InstrumentLL.generate_read_train)
     def generate_read_train(self, lows: Optional[IntIterable], highs: IntIterable,
         vread: float, nreads: int, inter_nanos: int, ground: bool) -> 'Instrument':

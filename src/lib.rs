@@ -1190,7 +1190,8 @@ impl PyInstrument {
     /// vread_channels(self, chans, averaging, /)
     /// --
     ///
-    /// Do a voltage read across selected channels.
+    /// Do a voltage read across selected channels flushing the internal
+    /// command buffer and immediately returning a value.
     ///
     /// :param chans: A uint64 numpy array or Iterable of the channels to
     ///               read voltage from
@@ -1201,6 +1202,28 @@ impl PyInstrument {
     fn vread_channels(&mut self, chans: PyReadonlyArray<usize, Ix1>, averaging: bool) -> Vec<f32> {
         let slice = chans.as_slice().unwrap();
         self._instrument.vread_channels(slice, averaging).unwrap()
+    }
+
+    /// vread_channels_deferred(self, channels, averaging, /)
+    /// --
+    ///
+    /// Do a voltage read across selected channels without immediately returning
+    /// a value. This can be used in a calling sequence that involves multiple
+    /// steps without immediately flushing the internal command buffer.
+    ///
+    /// :param chans: A uint64 numpy array or Iterable of the channels to
+    ///               read voltage from
+    /// :param bool averaging: Whether averaging should be used
+    fn vread_channels_deferred<'py>(mut slf: PyRefMut<'py, Self>, chans: PyReadonlyArray<usize, Ix1>, averaging: bool) ->
+        PyResult<PyRefMut<'py, Self>> {
+
+        let slice = chans.as_slice().unwrap();
+
+        match slf._instrument.vread_channels_deferred(slice, averaging) {
+            Ok(_) => Ok(slf),
+            Err(err) => Err(ArC2Error::new_exception(err))
+        }
+
     }
 
     /// execute(self, /)
