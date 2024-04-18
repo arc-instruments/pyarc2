@@ -3,7 +3,7 @@ use libarc2::Instrument;
 
 use libarc2::{BiasOrder, ControlMode, DataMode, ReadAt, ReadAfter, ReadType, find_ids, WaitFor};
 use libarc2::ArC2Error as LLArC2Error;
-use libarc2::registers::{IOMask, AuxDACFn};
+use libarc2::registers::{IOMask, IODir, AuxDACFn};
 use ndarray::{Ix1, Ix2, Array};
 use numpy::{PyArray, PyReadonlyArray};
 use std::convert::{From, Into, TryInto};
@@ -479,6 +479,52 @@ impl From<PyAuxDACFn> for AuxDACFn {
 impl From<&PyAuxDACFn> for AuxDACFn {
     fn from(func: &PyAuxDACFn) -> Self {
         func._inner
+    }
+}
+
+/// Identifier for selecting the direction of GPIO pins. Typically used
+/// with :meth:`pyarc2.Instrument.set_logic`. The ArC TWO GPIOs are
+/// organised in 4 clusters of 8 contiguous GPIO channels. As such an IO
+/// direction is shared by all 8 channels that are on the same cluster.
+/// Cluster 0 is GPIO 0 to 7, Cluster 1 is GPIO 8 to 15, Cluster 2 is
+/// GPIO 16 to 23 and Cluster 4 is GPIO 24 to 32.
+#[pyclass(name="IODir", module="pyarc2")]
+#[derive(Clone)]
+struct PyIODir { _inner: IODir }
+
+#[allow(non_snake_case)]
+#[pymethods]
+impl PyIODir {
+
+    /// GPIO direction: Input
+    #[classattr]
+    fn IN() -> PyIODir {
+        PyIODir { _inner: IODir::IN }
+    }
+
+    /// GPIO direction: Output
+    #[classattr]
+    fn OUT() -> PyIODir {
+        PyIODir { _inner: IODir::OUT }
+    }
+
+}
+
+impl From<IODir> for PyIODir {
+    fn from(dir: IODir) -> Self {
+        PyIODir { _inner: dir }
+    }
+}
+
+impl From<PyIODir> for IODir {
+    fn from(dir: PyIODir) -> Self {
+        dir._inner
+    }
+}
+
+impl From<&PyIODir> for IODir {
+    fn from(dir: &PyIODir) -> Self {
+        dir._inner
     }
 }
 
@@ -1206,10 +1252,37 @@ impl PyInstrument {
     /// required to actually load the configuration.
     ///
     /// :param int mask: A ``u32`` bitmask of the channels this function will be applied to
-    fn set_logic<'py>(mut slf: PyRefMut<'py, Self>, mask: u32) -> PyResult<PyRefMut<'py, Self>> {
+    /// :param cl0: Direction of GPIO cluster 0 (channels 0–7). Defaults to output.
+    /// :param cl1: Direction of GPIO cluster 1 (channels 8–15). Defaults to output.
+    /// :param cl2: Direction of GPIO cluster 2 (channels 16–23). Defaults to output.
+    /// :param cl3: Direction of GPIO cluster 3 (channels 24–32). Defaults to output.
+    fn set_logic<'py>(mut slf: PyRefMut<'py, Self>, mask: u32,
+        cl0: Option<PyIODir>, cl1: Option<PyIODir>, cl2: Option<PyIODir>, cl3: Option<PyIODir>)
+        -> PyResult<PyRefMut<'py, Self>> {
+
         let mask = IOMask::from_vals(&[mask]);
 
-        match slf._instrument.set_logic(&mask) {
+        let actual_cl0 = match cl0 {
+            Some(x) => x._inner,
+            None => IODir::OUT
+        };
+
+        let actual_cl1 = match cl1 {
+            Some(x) => x._inner,
+            None => IODir::OUT
+        };
+
+        let actual_cl2 = match cl2 {
+            Some(x) => x._inner,
+            None => IODir::OUT
+        };
+
+        let actual_cl3 = match cl3 {
+            Some(x) => x._inner,
+            None => IODir::OUT
+        };
+
+        match slf._instrument.set_logic(actual_cl0, actual_cl1, actual_cl2, actual_cl3, &mask) {
             Ok(_) => Ok(slf),
             Err(err) => Err(ArC2Error::new_exception(err))
         }
@@ -1466,6 +1539,7 @@ fn pyarc2(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyReadAfter>()?;
     m.add_class::<PyWaitFor>()?;
     m.add_class::<PyAuxDACFn>()?;
+    m.add_class::<PyIODir>()?;
     m.add("ArC2Error", py.get_type::<ArC2Error>())?;
 
     m.setattr(intern!(m.py(), "LIBARC2_VERSION"), libarc2::LIBARC2_VERSION)?;

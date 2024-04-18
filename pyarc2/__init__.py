@@ -1,6 +1,6 @@
 from .pyarc2 import InstrumentLL as _InstrumentLL
 from .pyarc2 import BiasOrder, ControlMode, DataMode, ReadType, WaitFor, AuxDACFn
-from .pyarc2 import ReadAt, ReadAfter, ArC2Error
+from .pyarc2 import ReadAt, ReadAfter, ArC2Error, IODir
 from .pyarc2 import find_ids
 try:
     from .pyarc2 import LIBARC2_VERSION
@@ -247,3 +247,8 @@ class Instrument(_InstrumentLL):
         inter_nanos: int) -> 'Instrument':
         return super().generate_vread_train(_ndarray_check(chans), averaging, npulses,
             inter_nanos)
+
+    @_inheritdocs(_InstrumentLL.set_logic)
+    def set_logic(self, mask: int, cl0: Optional[IODir] = None, cl1: Optional[IODir] = None,
+        cl2: Optional[IODir] = None, cl3: Optional[IODir] = None) -> 'Instrument':
+        return super().set_logic(mask, cl0, cl1, cl2, cl3)
