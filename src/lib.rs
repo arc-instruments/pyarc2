@@ -508,6 +508,15 @@ impl PyIODir {
         PyIODir { _inner: IODir::OUT }
     }
 
+    fn __str__(&self) -> String {
+        let inner = self._inner;
+        if inner == IODir::OUT {
+            "IODir.OUT".to_string()
+        } else {
+            "IODir.IN".to_string()
+        }
+    }
+
 }
 
 impl From<IODir> for PyIODir {
