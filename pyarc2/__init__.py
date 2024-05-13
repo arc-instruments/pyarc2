@@ -1,6 +1,6 @@
 from .pyarc2 import InstrumentLL as _InstrumentLL
 from .pyarc2 import BiasOrder, ControlMode, DataMode, ReadType, WaitFor, AuxDACFn
-from .pyarc2 import ReadAt, ReadAfter, ArC2Error
+from .pyarc2 import ReadAt, ReadAfter, ArC2Error, IODir
 from .pyarc2 import find_ids
 try:
     from .pyarc2 import LIBARC2_VERSION
@@ -88,12 +88,15 @@ class Instrument(_InstrumentLL):
 
     :param int port: The EFM id of the ArC TWO to connect to
     :param str firwmare: Path of the firmware to load
+    :param bool init: Run initialisation steps after loading firmware to
+                      bring ArC TWO to a known state (3.3 V logic and all
+                      DACs set at 0.0 V)
 
     :return: A new instance of ``pyarc2.Instrument``
     """
 
-    def __init__(self, port: int, firmware: str):
-        _InstrumentLL.__init__(port, firmware)
+    def __init__(self, port: int, firmware: str, init=True):
+        _InstrumentLL.__init__(port, firmware, init)
 
     def _array_iter_inner(self, mode: DataMode, rtype: ReadType):
         data = self.pick_one(mode, rtype)
@@ -212,6 +215,10 @@ class Instrument(_InstrumentLL):
     def read_slice_open(self, highs: IntIterable, ground_after: bool) -> np.ndarray:
         return super().read_slice_open(_ndarray_check(highs), ground_after)
 
+    @_inheritdocs(_InstrumentLL.read_slice_open_deferred)
+    def read_slice_open_deferred(self, highs: IntIterable, ground_after: bool) -> 'Instrument':
+        return super().read_slice_open_deferred(_ndarray_check(highs), ground_after)
+
     @_inheritdocs(_InstrumentLL.pulse_slice_masked)
     def pulse_slice_masked(self, chan: int, voltage: float, nanos: int,
         mask: IntIterable) -> 'Instrument':
@@ -232,6 +239,10 @@ class Instrument(_InstrumentLL):
     def vread_channels(self, chans: IntIterable, averaging: bool) -> List[float]:
         return super().vread_channels(_ndarray_check(chans), averaging)
 
+    @_inheritdocs(_InstrumentLL.vread_channels_deferred)
+    def vread_channels_deferred(self, chans: IntIterable, averaging: bool) -> 'Instrument':
+        return super().vread_channels_deferred(_ndarray_check(chans), averaging)
+
     @_inheritdocs(_InstrumentLL.generate_read_train)
     def generate_read_train(self, lows: Optional[IntIterable], highs: IntIterable,
         vread: float, nreads: int, inter_nanos: int, ground: bool) -> 'Instrument':
@@ -243,3 +254,8 @@ class Instrument(_InstrumentLL):
         inter_nanos: int) -> 'Instrument':
         return super().generate_vread_train(_ndarray_check(chans), averaging, npulses,
             inter_nanos)
+
+    @_inheritdocs(_InstrumentLL.set_logic)
+    def set_logic(self, mask: int, cl0: Optional[IODir] = None, cl1: Optional[IODir] = None,
+        cl2: Optional[IODir] = None, cl3: Optional[IODir] = None) -> 'Instrument':
+        return super().set_logic(mask, cl0, cl1, cl2, cl3)

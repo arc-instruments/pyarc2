@@ -14,15 +14,23 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+import os
+import os.path
+import sys
+
+if sys.platform == 'win32':
+    thisdir = os.path.dirname(__file__)
+    os.add_dll_directory(os.path.abspath(os.path.dirname(thisdir)))
+
 
 # -- Project information -----------------------------------------------------
 
 project = 'pyarc2'
-copyright = '2022, ArC Instruments Ltd'
+copyright = '2022–2024, ArC Instruments Ltd'
 author = 'Spyros Stathopoulos'
 
 # The full version, including alpha/beta/rc tags
-release = '0.4.0'
+release = '0.5.0'
 
 
 # -- General configuration ---------------------------------------------------

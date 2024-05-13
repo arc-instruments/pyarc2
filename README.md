@@ -1,6 +1,6 @@
 # Python bindings for libarc2
 
-[![](https://img.shields.io/badge/-docs-default?logo=gitbook&logoColor=white)](https://files.arc-instruments.co.uk/documents/pyarc2/latest/)
+[![](https://img.shields.io/badge/-docs-default?logo=gitbook&logoColor=white)](https://files.arc-instruments.co.uk/documents/pyarc2/0.5.0/)
 
 ## Introduction
 

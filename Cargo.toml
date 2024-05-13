@@ -1,6 +1,6 @@
 [package]
 name = "pyarc2"
-version = "0.4.0"
+version = "0.5.0"
 authors = ["Spyros Stathopoulos <spyros@arc-instruments.co.uk>"]
 description = "High level Python bindings for the libarc2 library"
 edition = "2018"
@@ -41,7 +41,7 @@ crate-type = ["cdylib", "lib"]
 [dependencies]
 numpy = "0.17"
 ndarray = "0.15"
-libarc2 = { git = "https://github.com/arc-instruments/libarc2", tag = "0.4.0" }
+libarc2 = { git = "https://github.com/arc-instruments/libarc2", tag = "0.5.0" }
 
 [dependencies.pyo3]
 version = "0.17"

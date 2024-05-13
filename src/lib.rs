@@ -3,7 +3,7 @@ use libarc2::Instrument;
 
 use libarc2::{BiasOrder, ControlMode, DataMode, ReadAt, ReadAfter, ReadType, find_ids, WaitFor};
 use libarc2::ArC2Error as LLArC2Error;
-use libarc2::registers::{IOMask, AuxDACFn};
+use libarc2::registers::{IOMask, IODir, AuxDACFn};
 use ndarray::{Ix1, Ix2, Array};
 use numpy::{PyArray, PyReadonlyArray};
 use std::convert::{From, Into, TryInto};
@@ -482,6 +482,61 @@ impl From<&PyAuxDACFn> for AuxDACFn {
     }
 }
 
+/// Identifier for selecting the direction of GPIO pins. Typically used
+/// with :meth:`pyarc2.Instrument.set_logic`. The ArC TWO GPIOs are
+/// organised in 4 clusters of 8 contiguous GPIO channels. As such an IO
+/// direction is shared by all 8 channels that are on the same cluster.
+/// Cluster 0 is GPIO 0 to 7, Cluster 1 is GPIO 8 to 15, Cluster 2 is
+/// GPIO 16 to 23 and Cluster 4 is GPIO 24 to 32.
+#[pyclass(name="IODir", module="pyarc2")]
+#[derive(Clone)]
+struct PyIODir { _inner: IODir }
+
+#[allow(non_snake_case)]
+#[pymethods]
+impl PyIODir {
+
+    /// GPIO direction: Input
+    #[classattr]
+    fn IN() -> PyIODir {
+        PyIODir { _inner: IODir::IN }
+    }
+
+    /// GPIO direction: Output
+    #[classattr]
+    fn OUT() -> PyIODir {
+        PyIODir { _inner: IODir::OUT }
+    }
+
+    fn __str__(&self) -> String {
+        let inner = self._inner;
+        if inner == IODir::OUT {
+            "IODir.OUT".to_string()
+        } else {
+            "IODir.IN".to_string()
+        }
+    }
+
+}
+
+impl From<IODir> for PyIODir {
+    fn from(dir: IODir) -> Self {
+        PyIODir { _inner: dir }
+    }
+}
+
+impl From<PyIODir> for IODir {
+    fn from(dir: PyIODir) -> Self {
+        dir._inner
+    }
+}
+
+impl From<&PyIODir> for IODir {
+    fn from(dir: &PyIODir) -> Self {
+        dir._inner
+    }
+}
+
 /// Catch-all exception for low-level ArC2 errors
 /// --
 #[pyclass(name="ArC2Error", module="pyarc2")]
@@ -547,8 +602,12 @@ impl PyInstrument {
 impl PyInstrument {
 
     #[new(name="InstrumentLL")]
-    fn new(id: i32, fw: &str) -> PyResult<Self> {
-        match Instrument::open_with_fw(id, fw, true) {
+    fn new(id: i32, fw: &str, init: Option<bool>) -> PyResult<Self> {
+        let actual_init = match init {
+            Some(x) => x,
+            None => true
+        };
+        match Instrument::open_with_fw(id, fw, true, actual_init) {
             Ok(instr) => Ok(PyInstrument { _instrument: instr }),
             Err(err) => Err(ArC2Error::new_exception(err))
         }
@@ -879,6 +938,25 @@ impl PyInstrument {
         array.into_pyarray(py)
     }
 
+    /// read_slice_open_deferred(self, highs, ground_after, /)
+    /// --
+    ///
+    /// Perform an open current measurement along the specified channels without immediately
+    /// returning a value. This can be used in an calling sequence that involves multiple
+    /// steps without flushing the internal command buffer.
+    fn read_slice_open_deferred<'py>(mut slf: PyRefMut<'py, Self>, highs: PyReadonlyArray<usize, Ix1>,
+        ground_after: Option<bool>) -> PyResult<PyRefMut<'py, Self>> {
+
+        let slice = highs.as_slice().unwrap();
+        let ground = ground_after.unwrap_or(true);
+
+        match slf._instrument.read_slice_open_deferred(slice, ground) {
+            Ok(_) => Ok(slf),
+            Err(err) => Err(ArC2Error::new_exception(err))
+        }
+
+    }
+
     /// read_slice_open(self, highs, ground_after, /)
     /// --
     ///
@@ -1125,7 +1203,8 @@ impl PyInstrument {
     /// vread_channels(self, chans, averaging, /)
     /// --
     ///
-    /// Do a voltage read across selected channels.
+    /// Do a voltage read across selected channels flushing the internal
+    /// command buffer and immediately returning a value.
     ///
     /// :param chans: A uint64 numpy array or Iterable of the channels to
     ///               read voltage from
@@ -1136,6 +1215,28 @@ impl PyInstrument {
     fn vread_channels(&mut self, chans: PyReadonlyArray<usize, Ix1>, averaging: bool) -> Vec<f32> {
         let slice = chans.as_slice().unwrap();
         self._instrument.vread_channels(slice, averaging).unwrap()
+    }
+
+    /// vread_channels_deferred(self, channels, averaging, /)
+    /// --
+    ///
+    /// Do a voltage read across selected channels without immediately returning
+    /// a value. This can be used in a calling sequence that involves multiple
+    /// steps without immediately flushing the internal command buffer.
+    ///
+    /// :param chans: A uint64 numpy array or Iterable of the channels to
+    ///               read voltage from
+    /// :param bool averaging: Whether averaging should be used
+    fn vread_channels_deferred<'py>(mut slf: PyRefMut<'py, Self>, chans: PyReadonlyArray<usize, Ix1>, averaging: bool) ->
+        PyResult<PyRefMut<'py, Self>> {
+
+        let slice = chans.as_slice().unwrap();
+
+        match slf._instrument.vread_channels_deferred(slice, averaging) {
+            Ok(_) => Ok(slf),
+            Err(err) => Err(ArC2Error::new_exception(err))
+        }
+
     }
 
     /// execute(self, /)
@@ -1187,10 +1288,37 @@ impl PyInstrument {
     /// required to actually load the configuration.
     ///
     /// :param int mask: A ``u32`` bitmask of the channels this function will be applied to
-    fn set_logic<'py>(mut slf: PyRefMut<'py, Self>, mask: u32) -> PyResult<PyRefMut<'py, Self>> {
+    /// :param cl0: Direction of GPIO cluster 0 (channels 0–7). Defaults to output.
+    /// :param cl1: Direction of GPIO cluster 1 (channels 8–15). Defaults to output.
+    /// :param cl2: Direction of GPIO cluster 2 (channels 16–23). Defaults to output.
+    /// :param cl3: Direction of GPIO cluster 3 (channels 24–32). Defaults to output.
+    fn set_logic<'py>(mut slf: PyRefMut<'py, Self>, mask: u32,
+        cl0: Option<PyIODir>, cl1: Option<PyIODir>, cl2: Option<PyIODir>, cl3: Option<PyIODir>)
+        -> PyResult<PyRefMut<'py, Self>> {
+
         let mask = IOMask::from_vals(&[mask]);
 
-        match slf._instrument.set_logic(&mask) {
+        let actual_cl0 = match cl0 {
+            Some(x) => x._inner,
+            None => IODir::OUT
+        };
+
+        let actual_cl1 = match cl1 {
+            Some(x) => x._inner,
+            None => IODir::OUT
+        };
+
+        let actual_cl2 = match cl2 {
+            Some(x) => x._inner,
+            None => IODir::OUT
+        };
+
+        let actual_cl3 = match cl3 {
+            Some(x) => x._inner,
+            None => IODir::OUT
+        };
+
+        match slf._instrument.set_logic(actual_cl0, actual_cl1, actual_cl2, actual_cl3, &mask) {
             Ok(_) => Ok(slf),
             Err(err) => Err(ArC2Error::new_exception(err))
         }
@@ -1447,6 +1575,7 @@ fn pyarc2(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyReadAfter>()?;
     m.add_class::<PyWaitFor>()?;
     m.add_class::<PyAuxDACFn>()?;
+    m.add_class::<PyIODir>()?;
     m.add("ArC2Error", py.get_type::<ArC2Error>())?;
 
     m.setattr(intern!(m.py(), "LIBARC2_VERSION"), libarc2::LIBARC2_VERSION)?;
