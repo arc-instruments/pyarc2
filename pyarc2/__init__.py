@@ -88,12 +88,15 @@ class Instrument(_InstrumentLL):
 
     :param int port: The EFM id of the ArC TWO to connect to
     :param str firwmare: Path of the firmware to load
+    :param bool init: Run initialisation steps after loading firmware to
+                      bring ArC TWO to a known state (3.3 V logic and all
+                      DACs set at 0.0 V)
 
     :return: A new instance of ``pyarc2.Instrument``
     """
 
-    def __init__(self, port: int, firmware: str):
-        _InstrumentLL.__init__(port, firmware)
+    def __init__(self, port: int, firmware: str, init=True):
+        _InstrumentLL.__init__(port, firmware, init)
 
     def _array_iter_inner(self, mode: DataMode, rtype: ReadType):
         data = self.pick_one(mode, rtype)

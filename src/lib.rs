@@ -602,8 +602,12 @@ impl PyInstrument {
 impl PyInstrument {
 
     #[new(name="InstrumentLL")]
-    fn new(id: i32, fw: &str) -> PyResult<Self> {
-        match Instrument::open_with_fw(id, fw, true) {
+    fn new(id: i32, fw: &str, init: Option<bool>) -> PyResult<Self> {
+        let actual_init = match init {
+            Some(x) => x,
+            None => true
+        };
+        match Instrument::open_with_fw(id, fw, true, actual_init) {
             Ok(instr) => Ok(PyInstrument { _instrument: instr }),
             Err(err) => Err(ArC2Error::new_exception(err))
         }
