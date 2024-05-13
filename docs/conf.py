@@ -30,7 +30,7 @@ copyright = '2022–2024, ArC Instruments Ltd'
 author = 'Spyros Stathopoulos'
 
 # The full version, including alpha/beta/rc tags
-release = '0.4.2-a0'
+release = '0.5.2-a0'
 
 
 # -- General configuration ---------------------------------------------------

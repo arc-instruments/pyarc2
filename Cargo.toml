@@ -1,6 +1,6 @@
 [package]
 name = "pyarc2"
-version = "0.4.2-a0"
+version = "0.5.2-a0"
 authors = ["Spyros Stathopoulos <spyros@arc-instruments.co.uk>"]
 description = "High level Python bindings for the libarc2 library"
 edition = "2018"
