@@ -1,6 +1,6 @@
 from .pyarc2 import InstrumentLL as _InstrumentLL
 from .pyarc2 import BiasOrder, ControlMode, DataMode, ReadType, WaitFor, AuxDACFn
-from .pyarc2 import ReadAt, ReadAfter, ArC2Error, IODir, OutputRange
+from .pyarc2 import ReadAt, ReadAfter, ArC2Error, IODir, LogicLevel, OutputRange
 from .pyarc2 import find_ids
 try:
     from .pyarc2 import LIBARC2_VERSION

@@ -1,7 +1,7 @@
 #[cfg(all(any(target_os = "windows", target_os = "linux"), target_arch = "x86_64"))]
 use libarc2::Instrument;
 
-use libarc2::{BiasOrder, ControlMode, DataMode, ReadAt, ReadAfter, ReadType, find_ids, WaitFor};
+use libarc2::{BiasOrder, ControlMode, DataMode, ReadAt, ReadAfter, ReadType, find_ids, WaitFor, LogicLevel};
 use libarc2::ArC2Error as LLArC2Error;
 use libarc2::registers::{IOMask, IODir, AuxDACFn, OutputRange};
 use ndarray::{Ix1, Ix2, Array};
@@ -542,6 +542,55 @@ impl From<PyIODir> for IODir {
 impl From<&PyIODir> for IODir {
     fn from(dir: &PyIODir) -> Self {
         dir._inner
+    }
+}
+
+/// Identifier for selecting logic levels. Typically used with
+/// :meth:`pyarc2.Instrument.set_logic_level`.
+///
+/// :var LL1V8: 1.8 V
+/// :var LL3V3: 3.3 V
+/// :var LL5V: 5.0 V
+#[pyclass(name="LogicLevel", module="pyarc2")]
+#[derive(Clone)]
+struct PyLogicLevel { _inner: LogicLevel }
+
+#[allow(non_snake_case)]
+#[pymethods]
+impl PyLogicLevel {
+
+    #[classattr]
+    fn LL1V8() -> PyLogicLevel {
+        PyLogicLevel { _inner:LogicLevel::LL1V8 }
+    }
+
+    #[classattr]
+    fn LL3V3() -> PyLogicLevel {
+        PyLogicLevel { _inner:LogicLevel::LL3V3 }
+    }
+
+    #[classattr]
+    fn LL5V() -> PyLogicLevel {
+        PyLogicLevel { _inner:LogicLevel::LL5V }
+    }
+
+}
+
+impl From<LogicLevel> for PyLogicLevel {
+    fn from(level: LogicLevel) -> Self {
+        PyLogicLevel { _inner: level }
+    }
+}
+
+impl From<PyLogicLevel> for LogicLevel {
+    fn from(level: PyLogicLevel) -> Self {
+        level._inner
+    }
+}
+
+impl From<&PyLogicLevel> for LogicLevel {
+    fn from(level: &PyLogicLevel) -> Self {
+        level._inner
     }
 }
 
@@ -1377,6 +1426,22 @@ impl PyInstrument {
         }
     }
 
+    /// set_logic_level(self, level, /)
+    /// --
+    ///
+    /// Configure the ArC2 digital IO logic level. The available logic levels
+    /// are specified by :class:`~pyarc2.LogicLevel`.
+    ///
+    /// :param level: An instance of :class:`~pyarc2.LogicLevel`.
+    fn set_logic_level<'py>(mut slf: PyRefMut<'py, Self>, level: PyLogicLevel)
+        -> PyResult<PyRefMut<'py, Self>> {
+
+        match slf._instrument.set_logic_level(level.into()) {
+            Ok(_) => Ok(slf),
+            Err(err) => Err(ArC2Error::new_exception(err))
+        }
+
+    }
 
     /// set_channel_range(self, chans, level, /)
     /// --
@@ -1647,6 +1712,7 @@ fn pyarc2(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyWaitFor>()?;
     m.add_class::<PyAuxDACFn>()?;
     m.add_class::<PyIODir>()?;
+    m.add_class::<PyLogicLevel>()?;
     m.add_class::<PyOutputRange>()?;
     m.add("ArC2Error", py.get_type::<ArC2Error>())?;
 
