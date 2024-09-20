@@ -1,6 +1,6 @@
 from .pyarc2 import InstrumentLL as _InstrumentLL
 from .pyarc2 import BiasOrder, ControlMode, DataMode, ReadType, WaitFor, AuxDACFn
-from .pyarc2 import ReadAt, ReadAfter, ArC2Error, IODir
+from .pyarc2 import ReadAt, ReadAfter, ArC2Error, IODir, OutputRange
 from .pyarc2 import find_ids
 try:
     from .pyarc2 import LIBARC2_VERSION
@@ -259,3 +259,7 @@ class Instrument(_InstrumentLL):
     def set_logic(self, mask: int, cl0: Optional[IODir] = None, cl1: Optional[IODir] = None,
         cl2: Optional[IODir] = None, cl3: Optional[IODir] = None) -> 'Instrument':
         return super().set_logic(mask, cl0, cl1, cl2, cl3)
+
+    @_inheritdocs(_InstrumentLL.set_channel_range)
+    def set_channel_range(self, chans: IntIterable, rng: OutputRange) -> 'Instrument':
+        return super().set_channel_range(_ndarray_check(chans), rng)

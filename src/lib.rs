@@ -3,7 +3,7 @@ use libarc2::Instrument;
 
 use libarc2::{BiasOrder, ControlMode, DataMode, ReadAt, ReadAfter, ReadType, find_ids, WaitFor};
 use libarc2::ArC2Error as LLArC2Error;
-use libarc2::registers::{IOMask, IODir, AuxDACFn};
+use libarc2::registers::{IOMask, IODir, AuxDACFn, OutputRange};
 use ndarray::{Ix1, Ix2, Array};
 use numpy::{PyArray, PyReadonlyArray};
 use std::convert::{From, Into, TryInto};
@@ -542,6 +542,51 @@ impl From<PyIODir> for IODir {
 impl From<&PyIODir> for IODir {
     fn from(dir: &PyIODir) -> Self {
         dir._inner
+    }
+}
+
+#[pyclass(name="OutputRange", module="pyarc2")]
+#[derive(Clone)]
+struct PyOutputRange { _inner: OutputRange }
+
+#[allow(non_snake_case)]
+#[pymethods]
+impl PyOutputRange {
+    #[classattr]
+    fn STD() -> PyOutputRange {
+        PyOutputRange { _inner: OutputRange::STD }
+    }
+
+    #[classattr]
+    fn EXT() -> PyOutputRange {
+        PyOutputRange { _inner: OutputRange::EXT }
+    }
+
+    fn __str__(&self) -> String {
+        let inner = self._inner;
+        if inner == OutputRange::STD {
+            "OutputRange.STD".to_string()
+        } else {
+            "OutputRange.EXT".to_string()
+        }
+    }
+}
+
+impl From<OutputRange> for PyOutputRange {
+    fn from(rng: OutputRange) -> Self {
+        PyOutputRange { _inner: rng }
+    }
+}
+
+impl From<PyOutputRange> for OutputRange {
+    fn from(pyrng: PyOutputRange) -> Self {
+        pyrng._inner
+    }
+}
+
+impl From<&PyOutputRange> for OutputRange {
+    fn from(pyrng: &PyOutputRange) -> Self {
+        pyrng._inner
     }
 }
 
@@ -1332,6 +1377,24 @@ impl PyInstrument {
         }
     }
 
+
+    /// set_channel_range(self, chans, level, /)
+    /// --
+    ///
+    /// Set the range of the ArC2 analogue channels. The available ranges
+    /// are defined by :class:`~pyarc2.OutputRange`
+    ///
+    /// :param chans: A list of analogue channel indices to change range
+    /// :param rng: The range to set the channels to. Standard range is
+    ///             ±10 V, extended range is ±20 V.
+    fn set_channel_range<'py>(mut slf: PyRefMut<'py, Self>, chans: PyReadonlyArray<usize, Ix1>, rng: PyOutputRange)
+        -> PyResult<PyRefMut<'py, Self>> {
+        let slice = chans.as_slice().unwrap();
+        match slf._instrument.set_channel_range(slice, &rng.into()) {
+            Ok(_) => Ok(slf),
+            Err(err) => Err(ArC2Error::new_exception(err))
+        }
+    }
     /// currents_from_address(self, addr, channels, /)
     /// --
     ///
@@ -1584,6 +1647,7 @@ fn pyarc2(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyWaitFor>()?;
     m.add_class::<PyAuxDACFn>()?;
     m.add_class::<PyIODir>()?;
+    m.add_class::<PyOutputRange>()?;
     m.add("ArC2Error", py.get_type::<ArC2Error>())?;
 
     m.setattr(intern!(m.py(), "LIBARC2_VERSION"), libarc2::LIBARC2_VERSION)?;
