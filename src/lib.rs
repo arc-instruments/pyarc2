@@ -462,6 +462,14 @@ impl PyAuxDACFn {
     fn CSET() -> PyAuxDACFn {
         PyAuxDACFn { _inner: AuxDACFn::CSET }
     }
+
+    /// Controls the logic level, however adjusting the logic
+    /// level through the AUX DACs is discouraged; use the
+    /// dedicated logic functions instead.
+    #[classattr]
+    fn LGC() -> PyAuxDACFn {
+        PyAuxDACFn { _inner: AuxDACFn::LGC }
+    }
 }
 
 impl From<AuxDACFn> for PyAuxDACFn {
