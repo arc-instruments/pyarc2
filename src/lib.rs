@@ -5,14 +5,11 @@ use libarc2::{BiasOrder, ControlMode, DataMode, ReadAt, ReadAfter, ReadType, fin
 use libarc2::ArC2Error as LLArC2Error;
 use libarc2::registers::{IOMask, IODir, AuxDACFn, OutputRange};
 use ndarray::{Ix1, Ix2, Array};
-use numpy::{PyArray, PyReadonlyArray};
+use numpy::{PyArray, PyReadonlyArray, IntoPyArray};
 use std::convert::{From, Into, TryInto};
-use numpy::convert::IntoPyArray;
 use pyo3::prelude::{pymodule, pyclass, pymethods};
-use pyo3::prelude::{PyModule, PyRefMut, PyResult, Python, PyErr};
-use pyo3::create_exception;
-use pyo3::exceptions;
-use pyo3::intern;
+use pyo3::prelude::{PyAnyMethods, PyModule, PyModuleMethods, PyRefMut, PyResult, Python, PyErr, Bound};
+use pyo3::{intern, exceptions, create_exception};
 
 
 /// BiasOrder is used in combination with the multi-crosspoint pulse and
@@ -703,7 +700,8 @@ impl PyInstrument {
 #[pymethods]
 impl PyInstrument {
 
-    #[new(name="InstrumentLL")]
+    #[new]
+    #[pyo3(signature = (id, fw, init=None))]
     fn new(id: i32, fw: &str, init: Option<bool>) -> PyResult<Self> {
         let actual_init = match init {
             Some(x) => x,
@@ -895,6 +893,7 @@ impl PyInstrument {
     ///                the voltage configuration.
     /// :param base: Voltage to set all channel *not* included in ``config``.
     ///              Set to ``None`` to leave them at their current state.
+    #[pyo3(signature = (input, base=None))]
     fn config_channels<'py>(mut slf: PyRefMut<'py, Self>, input: Vec<(u16, f32)>, base: Option<f32>)
         -> PyResult<PyRefMut<'py, Self>> {
 
@@ -991,9 +990,9 @@ impl PyInstrument {
     /// :return: The current of each individual channel along the ``chan`` line sinked
     ///          at ``chan``
     /// :rtype: A numpy f32 array
-    fn read_slice<'py>(&mut self, py: Python<'py>, chan: usize, vread: f32) -> &'py PyArray<f32, Ix1> {
+    fn read_slice<'py>(&mut self, py: Python<'py>, chan: usize, vread: f32) -> Bound<'py, PyArray<f32, Ix1>> {
         let array = Array::from(self._instrument.read_slice(chan, vread).unwrap());
-        array.into_pyarray(py)
+        array.into_pyarray_bound(py)
     }
 
     /// read_slice_masked(self, chan, mask, vread, /)
@@ -1012,12 +1011,12 @@ impl PyInstrument {
     ///          at ``chan``; unselected channels will default to ``NaN``
     /// :rtype: A numpy f32 array
     fn read_slice_masked<'py>(&mut self, py: Python<'py>, chan: usize,
-        mask: PyReadonlyArray<usize, Ix1>, vread: f32) -> &'py PyArray<f32, Ix1> {
+        mask: PyReadonlyArray<usize, Ix1>, vread: f32) -> Bound<'py, PyArray<f32, Ix1>> {
 
         let slice = mask.as_slice().unwrap();
         let array = Array::from(self._instrument.read_slice_masked(chan, slice, vread).unwrap());
 
-        array.into_pyarray(py)
+        array.into_pyarray_bound(py)
     }
 
     /// read_all(self, vread, order, /)
@@ -1032,12 +1031,12 @@ impl PyInstrument {
     /// :return: An 32×32 array containing the current measured on each individual
     ///          cronsspoint
     /// :rtype: A numpy (2, 2) f32 ndarray
-    fn read_all<'py>(&mut self, py: Python<'py>, vread: f32, order: PyBiasOrder) -> &'py PyArray<f32, Ix2> {
+    fn read_all<'py>(&mut self, py: Python<'py>, vread: f32, order: PyBiasOrder) -> Bound<'py, PyArray<f32, Ix2>> {
 
         let data = self._instrument.read_all(vread, order.into()).unwrap();
         let array = Array::from_shape_vec((32, 32), data).unwrap();
 
-        array.into_pyarray(py)
+        array.into_pyarray_bound(py)
     }
 
     /// read_slice_open_deferred(self, highs, ground_after, /)
@@ -1046,6 +1045,7 @@ impl PyInstrument {
     /// Perform an open current measurement along the specified channels without immediately
     /// returning a value. This can be used in an calling sequence that involves multiple
     /// steps without flushing the internal command buffer.
+    #[pyo3(signature = (highs, ground_after=None))]
     fn read_slice_open_deferred<'py>(mut slf: PyRefMut<'py, Self>, highs: PyReadonlyArray<usize, Ix1>,
         ground_after: Option<bool>) -> PyResult<PyRefMut<'py, Self>> {
 
@@ -1072,13 +1072,14 @@ impl PyInstrument {
     /// :param bool ground_after: Whether channels will be grounded automatically after
     ///                           current is read
     /// :rtype: A numpy f32 array
+    #[pyo3(signature = (highs, ground_after=None))]
     fn read_slice_open<'py>(&mut self, py: Python<'py>, highs: PyReadonlyArray<usize, Ix1>,
-        ground_after: Option<bool>) -> &'py PyArray<f32, Ix1> {
+        ground_after: Option<bool>) -> Bound<'py, PyArray<f32, Ix1>> {
 
         let slice = highs.as_slice().unwrap();
         let ground = ground_after.unwrap_or(true);
 
-        self._instrument.read_slice_open(slice, ground).unwrap().into_pyarray(py)
+        self._instrument.read_slice_open(slice, ground).unwrap().into_pyarray_bound(py)
     }
 
     /// pulse_one(self, low, high, voltage, nanos, /)
@@ -1244,10 +1245,10 @@ impl PyInstrument {
     ///          applied
     /// :rtype: A numpy f32 array
     fn pulseread_slice<'py>(&mut self, py: Python<'py>, chan: usize, vpulse: f32,
-        nanos: u128, vread: f32) -> &'py PyArray<f32, Ix1> {
+        nanos: u128, vread: f32) -> Bound<'py, PyArray<f32, Ix1>> {
 
         let data = self._instrument.pulseread_slice(chan, vpulse, nanos, vread).unwrap();
-        Array::from(data).into_pyarray(py)
+        Array::from(data).into_pyarray_bound(py)
 
     }
 
@@ -1269,12 +1270,12 @@ impl PyInstrument {
     /// :rtype: A numpy f32 array
     fn pulseread_slice_masked<'py>(&mut self, py: Python<'py>, chan: usize,
         mask: PyReadonlyArray<usize, Ix1>, vpulse: f32, nanos: u128,
-        vread: f32) -> &'py PyArray<f32, Ix1> {
+        vread: f32) -> Bound<'py, PyArray<f32, Ix1>> {
 
         let slice = mask.as_slice().unwrap();
         let data = self._instrument.pulseread_slice_masked(chan, slice, vpulse, nanos, vread)
             .unwrap();
-        Array::from(data).into_pyarray(py)
+        Array::from(data).into_pyarray_bound(py)
     }
 
     /// pulseread_all(self, vpulse, nanos, vread, order, /)
@@ -1293,12 +1294,12 @@ impl PyInstrument {
     ///          cronsspoint
     /// :rtype: A numpy (2, 2) f32 ndarray
     fn pulseread_all<'py>(&mut self, py: Python<'py>, vpulse: f32, nanos: u128,
-        vread: f32, order: PyBiasOrder) -> &'py PyArray<f32, Ix2> {
+        vread: f32, order: PyBiasOrder) -> Bound<'py, PyArray<f32, Ix2>> {
 
         let data = self._instrument.pulseread_all(vpulse, nanos, vread, order.into())
             .unwrap();
 
-        Array::from_shape_vec((32, 32), data).unwrap().into_pyarray(py)
+        Array::from_shape_vec((32, 32), data).unwrap().into_pyarray_bound(py)
 
     }
 
@@ -1394,6 +1395,7 @@ impl PyInstrument {
     /// :param cl1: Direction of GPIO cluster 1 (channels 8–15). Defaults to output.
     /// :param cl2: Direction of GPIO cluster 2 (channels 16–23). Defaults to output.
     /// :param cl3: Direction of GPIO cluster 3 (channels 24–32). Defaults to output.
+    #[pyo3(signature = (mask, cl0=None, cl1=None, cl2=None, cl3=None))]
     fn set_logic<'py>(mut slf: PyRefMut<'py, Self>, mask: u32,
         cl0: Option<PyIODir>, cl1: Option<PyIODir>, cl2: Option<PyIODir>, cl3: Option<PyIODir>)
         -> PyResult<PyRefMut<'py, Self>> {
@@ -1474,10 +1476,10 @@ impl PyInstrument {
     ///          will be replaced with ``Nan``
     /// :rtype: A numpy f32 array
     fn currents_from_address<'py>(&self, py: Python<'py>, addr: u32,
-        chans: PyReadonlyArray<usize, Ix1>) -> PyResult<&'py PyArray<f32, Ix1>> {
+        chans: PyReadonlyArray<usize, Ix1>) -> PyResult<Bound<'py, PyArray<f32, Ix1>>> {
 
         match self._instrument.currents_from_address(addr, chans.as_slice().unwrap()) {
-            Ok(result) => Ok(Array::from(result).into_pyarray(py)),
+            Ok(result) => Ok(Array::from(result).into_pyarray_bound(py)),
             Err(err) => Err(ArC2Error::new_exception(err))
         }
     }
@@ -1491,9 +1493,10 @@ impl PyInstrument {
     /// :param int addr: The memory address to read currents from
     /// :return: An array with the currents of all wordline-corresponding channels
     /// :rtype: A numpy f32 array
-    fn word_currents_from_address<'py>(&self, py: Python<'py>, addr: u32) -> PyResult<&'py PyArray<f32, Ix1>> {
+    fn word_currents_from_address<'py>(&self, py: Python<'py>, addr: u32)
+        -> PyResult<Bound<'py, PyArray<f32, Ix1>>> {
         match self._instrument.word_currents_from_address(addr) {
-            Ok(result) => Ok(Array::from(result).into_pyarray(py)),
+            Ok(result) => Ok(Array::from(result).into_pyarray_bound(py)),
             Err(err) => Err(ArC2Error::new_exception(err))
         }
     }
@@ -1507,9 +1510,10 @@ impl PyInstrument {
     /// :param int addr: The memory address to read currents from
     /// :return: An array with the currents of all bitline-corresponding channels
     /// :rtype: A numpy f32 array
-    fn bit_currents_from_address<'py>(&self, py: Python<'py>, addr: u32) -> PyResult<&'py PyArray<f32, Ix1>> {
+    fn bit_currents_from_address<'py>(&self, py: Python<'py>, addr: u32)
+        -> PyResult<Bound<'py, PyArray<f32, Ix1>>> {
         match self._instrument.bit_currents_from_address(addr) {
-            Ok(result) => Ok(Array::from(result).into_pyarray(py)),
+            Ok(result) => Ok(Array::from(result).into_pyarray_bound(py)),
             Err(err) => Err(ArC2Error::new_exception(err))
         }
     }
@@ -1570,6 +1574,7 @@ impl PyInstrument {
     /// :param int inter_nanos: Delay (in ns) between subsequent reads; can be 0
     /// :param bool ground: Whether to ground high and low channels after the
     ///                     operation
+    #[pyo3(signature = (lows, highs, vread, nreads, inter_nanos, ground))]
     fn generate_read_train<'py>(mut slf: PyRefMut<'py, Self>,
         lows: Option<PyReadonlyArray<usize, Ix1>>, highs: PyReadonlyArray<usize, Ix1>,
         vread: f32, nreads: usize, inter_nanos: u128, ground: bool)
@@ -1631,6 +1636,7 @@ impl PyInstrument {
     /// :param int interpulse: Delay between consecutive read-outs in nanoseconds
     /// :param condition: Variant of :class:`pyarc2.WaitFor` denoting the termination
     ///                   condition for this read train
+    #[pyo3(signature = (low, high, vread, interpulse, preload, condition))]
     fn read_train<'py>(mut slf: PyRefMut<'py, Self>, low: usize, high: usize,
         vread: f32, interpulse: u64, preload: Option<f32>, condition: PyWaitFor)
         -> PyResult<()> {
@@ -1656,7 +1662,7 @@ impl PyInstrument {
     ///          ``DataMode`` variant) floats
     /// :rtype: An f32 numpy array
     fn pick_one<'py>(&mut self, py: Python<'py>, mode: PyDataMode, rtype: PyReadType) ->
-        PyResult<Option<&'py PyArray<f32, Ix1>>> {
+        PyResult<Option<Bound<'py, PyArray<f32, Ix1>>>> {
 
         let mode: DataMode = mode.into();
         let rtype: ReadType = rtype.into();
@@ -1665,7 +1671,7 @@ impl PyInstrument {
             Ok(data_opt) => {
                 match data_opt {
                     Some(data) => {
-                        let array = Array::from(data).into_pyarray(py);
+                        let array = Array::from(data).into_pyarray_bound(py);
                         Ok(Some(array))
                     },
                     None => Ok(None)
@@ -1679,7 +1685,7 @@ impl PyInstrument {
 }
 
 #[pymodule]
-fn pyarc2(py: Python, m: &PyModule) -> PyResult<()> {
+fn pyarc2(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
 
     /// find_ids()
     /// --
@@ -1714,7 +1720,7 @@ fn pyarc2(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyIODir>()?;
     m.add_class::<PyLogicLevel>()?;
     m.add_class::<PyOutputRange>()?;
-    m.add("ArC2Error", py.get_type::<ArC2Error>())?;
+    m.add("ArC2Error", py.get_type_bound::<ArC2Error>())?;
 
     m.setattr(intern!(m.py(), "LIBARC2_VERSION"), libarc2::LIBARC2_VERSION)?;
 
