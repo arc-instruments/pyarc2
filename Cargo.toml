@@ -39,13 +39,12 @@ name = "pyarc2"
 crate-type = ["cdylib", "lib"]
 
 [dependencies]
-# this should be updated to 0.22 when out
-numpy = { git = "https://github.com/PyO3/rust-numpy" }
+numpy = "0.22"
 ndarray = "0.15"
 libarc2 = { git = "https://github.com/arc-instruments/libarc2" }
 
 [dependencies.pyo3]
-version = "0.17"
+version = "0.22"
 features = ["extension-module"]
 
 [features]
