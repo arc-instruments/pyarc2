@@ -40,7 +40,7 @@ crate-type = ["cdylib", "lib"]
 
 [dependencies]
 numpy = "0.22"
-ndarray = "0.15"
+ndarray = "0.16"
 libarc2 = { git = "https://github.com/arc-instruments/libarc2" }
 
 [dependencies.pyo3]
