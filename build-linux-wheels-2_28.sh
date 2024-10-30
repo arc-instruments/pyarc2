@@ -36,7 +36,7 @@ export WHLPLAT=manylinux_2_28_x86_64
 
 cd /io/pyarc2
 
-for PYBIN in /opt/python/cp{39,310,311,312}*/bin; do
+for PYBIN in /opt/python/cp{310,311,312,313}*/bin; do
     PYEXEC="${PYBIN}/python"
     PIPEXEC="${PYBIN}/pip"
     "${PIPEXEC}" install -U poetry setuptools
