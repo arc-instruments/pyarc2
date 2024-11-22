@@ -2,20 +2,21 @@ name: Generate wheels
 on: [push]
 jobs:
   releasecheck:
-    if: ${{ startsWith(github.ref, 'refs/tags') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          fetch-tags: true
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.12'
       - name: Install python libraries
         run: python -m pip install tomli requests semver
       - name: Check release
-        run: python releasecheck.py releasecheck
+        run: python releasecheck.py commitcheck
   linux-wheels:
-    if: ${{ startsWith(github.ref, 'refs/tags') }}
     runs-on: ubuntu-latest
     needs: [releasecheck]
     container:
@@ -27,18 +28,17 @@ jobs:
       - name: Run build script
         run: ./build-linux-wheels-2_28.sh
       - name: Gather wheels
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: pyarc2-manylinux_x86_64
           path: |
             target/wheels/pyarc2*-manylinux*_x86_64.whl
       - name: Gather sdist
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: pyarc2-sdist
           path: target/wheels/pyarc2*tar.gz
   windows-wheels:
-    if: ${{ startsWith(github.ref, 'refs/tags') }}
     runs-on: windows-latest
     needs: [releasecheck]
     strategy:
@@ -72,23 +72,31 @@ jobs:
           }
         shell: pwsh
       - name: Gather wheels
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
+        with:
+          name: pyarc2-win_amd64-wheel-${{ matrix.python-version }}
+          path: target/wheels/pyarc2*-win_amd64.whl
+  merged-windows-wheels:
+    runs-on: ubuntu-latest
+    needs: [windows-wheels]
+    steps:
+      - name: Merge windows wheels
+        uses: actions/upload-artifact/merge@v4
         with:
           name: pyarc2-win_amd64
-          path: target/wheels/pyarc2*-win_amd64.whl
+          pattern: pyarc2-win_amd64-wheel-*
   publish:
-    if: ${{ startsWith(github.ref, 'refs/tags') }}
     runs-on: ubuntu-latest
-    needs: [windows-wheels, linux-wheels]
+    needs: [merged-windows-wheels, linux-wheels]
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.12'
       - name: Install python tools
         run: python -m pip install twine
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         id: download
         with:
           path: artifacts
@@ -104,15 +112,6 @@ jobs:
       - name: Twine check
         run: |
           python -m twine check \
-            artifacts/pyarc2-sdist/*tar.gz \
-            artifacts/pyarc2-manylinux_x86_64/*whl \
-            artifacts/pyarc2-win_amd64/*whl
-      - name: Publish
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_API_TOKEN }}
-        run: |
-          python -m twine upload \
             artifacts/pyarc2-sdist/*tar.gz \
             artifacts/pyarc2-manylinux_x86_64/*whl \
             artifacts/pyarc2-win_amd64/*whl
