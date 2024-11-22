@@ -7,7 +7,7 @@
 set -ex
 
 yum -y update
-yum -y install libusb wget git rpm-build rpmdevtools gcc-c++ udev libffi-dev
+yum -y install libusb wget git rpm-build rpmdevtools gcc-c++ udev libffi-devel
 
 mkdir -p ${HOME}/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
 
