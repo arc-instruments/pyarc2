@@ -16,7 +16,7 @@ def current_tag():
         out = subprocess.check_output([\
             'git', 'name-rev', '--name-only', '--no-undefined', '--tags', 'HEAD'],
             stderr=subprocess.DEVNULL)
-        out = re.split('[\^\,\+]', out.decode().strip())
+        out = re.split(r'[\^\,\+]', out.decode().strip())
         semver.parse(out[0])
         return out[0]
     except (subprocess.CalledProcessError, ValueError):
@@ -48,7 +48,7 @@ def highest_semver_tag():
 
 def docs_version():
 
-    regexp = re.compile('^release\s?=\s?(.*)$')
+    regexp = re.compile(r'^release\s?=\s?(.*)$')
     lines = open(os.path.join('docs', 'conf.py')).readlines()
 
     for line in lines:

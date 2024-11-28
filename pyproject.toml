@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyarc2"
-version = "0.5.0"
+version = "0.6.0"
 description = "High level Python bindings for the libarc2 library"
 authors = ["Spyros Stathopoulos <spyros@arc-instruments.co.uk>"]
 
@@ -9,7 +9,7 @@ authors = ["Spyros Stathopoulos <spyros@arc-instruments.co.uk>"]
 
 [project]
 name = "pyarc2"
-version = "0.5.0"
+version = "0.6.0"
 description = "High level Python bindings for the libarc2 library"
 readme = "README.md"
 authors = [
@@ -20,7 +20,7 @@ homepage = "http://arc-instruments.co.uk/"
 repository = "https://github.com/arc-instruments/pyarc2"
 license = { text = "MPL-2.0" }
 
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -30,10 +30,10 @@ classifiers = [
   "Operating System :: Microsoft :: Windows :: Windows 8.1",
   "Operating System :: Microsoft :: Windows :: Windows 10",
   "Operating System :: POSIX :: Linux",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Programming Language :: Rust",
   "Topic :: Scientific/Engineering",
   "Topic :: Software Development :: Libraries :: Python Modules"
@@ -44,7 +44,7 @@ dependencies = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.9"
+python = ">=3.10"
 numpy = ">=1.18"
 
 [tool.poetry.dev-dependencies]

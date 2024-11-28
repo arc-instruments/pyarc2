@@ -7,7 +7,7 @@
 set -ex
 
 yum -y update
-yum -y install libusb wget git rpm-build rpmdevtools gcc-c++ udev
+yum -y install libusb wget git rpm-build rpmdevtools gcc-c++ udev libffi-devel
 
 mkdir -p ${HOME}/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
 
@@ -36,7 +36,8 @@ export WHLPLAT=manylinux_2_28_x86_64
 
 cd /io/pyarc2
 
-for PYBIN in /opt/python/cp{39,310,311,312}*/bin; do
+for PYVER in {310,311,312,313}; do
+    PYBIN=/opt/python/cp${PYVER}-cp${PYVER}/bin
     PYEXEC="${PYBIN}/python"
     PIPEXEC="${PYBIN}/pip"
     "${PIPEXEC}" install -U poetry setuptools
