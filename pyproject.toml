@@ -47,7 +47,7 @@ dependencies = [
 python = ">=3.10"
 numpy = ">=1.18"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 wheel = "*"
 maturin = "^1.0"
 delvewheel = [{ version = "^0.0.22", platform = 'win32' }]
