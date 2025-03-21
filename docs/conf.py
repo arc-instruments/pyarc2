@@ -26,11 +26,11 @@ if sys.platform == 'win32':
 # -- Project information -----------------------------------------------------
 
 project = 'pyarc2'
-copyright = '2022–2024, ArC Instruments Ltd'
+copyright = '2022–2025, ArC Instruments Ltd'
 author = 'Spyros Stathopoulos'
 
 # The full version, including alpha/beta/rc tags
-release = '0.5.2-a0'
+release = '0.6.2-a0'
 
 
 # -- General configuration ---------------------------------------------------
