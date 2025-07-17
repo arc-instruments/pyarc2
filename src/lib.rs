@@ -992,7 +992,7 @@ impl PyInstrument {
     /// :rtype: A numpy f32 array
     fn read_slice<'py>(&mut self, py: Python<'py>, chan: usize, vread: f32) -> Bound<'py, PyArray<f32, Ix1>> {
         let array = self._instrument.read_slice(chan, vread).unwrap();
-        array.into_pyarray_bound(py)
+        array.into_pyarray(py)
     }
 
     /// read_slice_masked(self, chan, mask, vread, /)
@@ -1016,7 +1016,7 @@ impl PyInstrument {
         let maskslice = mask.as_slice().unwrap();
         let res = self._instrument.read_slice_masked(chan, maskslice, vread).unwrap();
 
-        res.into_pyarray_bound(py)
+        res.into_pyarray(py)
     }
 
     /// read_all(self, vread, order, /)
@@ -1034,7 +1034,7 @@ impl PyInstrument {
     fn read_all<'py>(&mut self, py: Python<'py>, vread: f32, order: PyBiasOrder) -> Bound<'py, PyArray<f32, Ix2>> {
 
         let data = self._instrument.read_all(vread, order.into()).unwrap();
-        let array = data.into_pyarray_bound(py);
+        let array = data.into_pyarray(py);
         array.borrow().reshape((32, 32)).unwrap()
     }
 
@@ -1078,7 +1078,7 @@ impl PyInstrument {
         let slice = highs.as_slice().unwrap();
         let ground = ground_after.unwrap_or(true);
 
-        self._instrument.read_slice_open(slice, ground).unwrap().into_pyarray_bound(py)
+        self._instrument.read_slice_open(slice, ground).unwrap().into_pyarray(py)
     }
 
     /// pulse_one(self, low, high, voltage, nanos, /)
@@ -1247,7 +1247,7 @@ impl PyInstrument {
         nanos: u128, vread: f32) -> Bound<'py, PyArray<f32, Ix1>> {
 
         let data = self._instrument.pulseread_slice(chan, vpulse, nanos, vread).unwrap();
-        data.into_pyarray_bound(py)
+        data.into_pyarray(py)
     }
 
     /// pulseread_slice_masked(self, chan, mask, vpulse, nanos, vread, /)
@@ -1273,7 +1273,7 @@ impl PyInstrument {
         let slice = mask.as_slice().unwrap();
         let data = self._instrument.pulseread_slice_masked(chan, slice, vpulse, nanos, vread)
             .unwrap();
-        data.into_pyarray_bound(py)
+        data.into_pyarray(py)
     }
 
     /// pulseread_all(self, vpulse, nanos, vread, order, /)
@@ -1296,7 +1296,7 @@ impl PyInstrument {
 
         let data = self._instrument.pulseread_all(vpulse, nanos, vread, order.into())
             .unwrap();
-        let array = data.into_pyarray_bound(py);
+        let array = data.into_pyarray(py);
         array.borrow().reshape((32, 32)).unwrap()
 
     }
@@ -1478,7 +1478,7 @@ impl PyInstrument {
         chans: PyReadonlyArray1<'py, usize>) -> PyResult<Bound<'py, PyArray<f32, Ix1>>> {
 
         match self._instrument.currents_from_address(addr, chans.as_slice().unwrap()) {
-            Ok(result) => Ok(result.into_pyarray_bound(py)),
+            Ok(result) => Ok(result.into_pyarray(py)),
             Err(err) => Err(ArC2Error::new_exception(err))
         }
     }
@@ -1495,7 +1495,7 @@ impl PyInstrument {
     fn word_currents_from_address<'py>(&self, py: Python<'py>, addr: u32)
         -> PyResult<Bound<'py, PyArray<f32, Ix1>>> {
         match self._instrument.word_currents_from_address(addr) {
-            Ok(result) => Ok(result.into_pyarray_bound(py)),
+            Ok(result) => Ok(result.into_pyarray(py)),
             Err(err) => Err(ArC2Error::new_exception(err))
         }
     }
@@ -1512,7 +1512,7 @@ impl PyInstrument {
     fn bit_currents_from_address<'py>(&self, py: Python<'py>, addr: u32)
         -> PyResult<Bound<'py, PyArray<f32, Ix1>>> {
         match self._instrument.bit_currents_from_address(addr) {
-            Ok(result) => Ok(result.into_pyarray_bound(py)),
+            Ok(result) => Ok(result.into_pyarray(py)),
             Err(err) => Err(ArC2Error::new_exception(err))
         }
     }
@@ -1670,7 +1670,7 @@ impl PyInstrument {
             Ok(data_opt) => {
                 match data_opt {
                     Some(data) => {
-                        let array = data.into_pyarray_bound(py);
+                        let array = data.into_pyarray(py);
                         Ok(Some(array))
                     },
                     None => Ok(None)
@@ -1719,7 +1719,7 @@ fn pyarc2(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyIODir>()?;
     m.add_class::<PyLogicLevel>()?;
     m.add_class::<PyOutputRange>()?;
-    m.add("ArC2Error", py.get_type_bound::<ArC2Error>())?;
+    m.add("ArC2Error", py.get_type::<ArC2Error>())?;
 
     m.setattr(intern!(m.py(), "LIBARC2_VERSION"), libarc2::LIBARC2_VERSION)?;
 
