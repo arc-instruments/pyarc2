@@ -1381,12 +1381,12 @@ impl PyInstrument {
         }
     }
 
-    /// set_logic(self, channel_mask, enable, /)
+    /// set_logic(self, channel_mask, cl0, cl1, cl2, cl3, /)
     /// --
     ///
-    /// Set the digital I/Os specified by ``mask`` to either high (when ``enable`` is ``True``)
-    /// or low (when ``enable`` is ``False``). An :meth:`~pyarc2.Instrument.execute` is
-    /// required to actually load the configuration.
+    /// Set the digital I/Os  level and direction for the channels specified by ``mask``.
+    /// Asserted bit channels will be raised to high; rest will be low.
+    /// An :meth:`~pyarc2.Instrument.execute` is required to actually load the configuration.
     ///
     /// :param int mask: A ``u32`` bitmask of the channels this function will be applied to
     /// :param cl0: Direction of GPIO cluster 0 (channels 0–7). Defaults to output.
