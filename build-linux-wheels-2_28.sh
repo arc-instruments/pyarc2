@@ -36,7 +36,7 @@ export WHLPLAT=manylinux_2_28_x86_64
 
 cd /io/pyarc2
 
-for PYVER in {310,311,312,313}; do
+for PYVER in {311,312,313,314}; do
     PYBIN=/opt/python/cp${PYVER}-cp${PYVER}/bin
     PYEXEC="${PYBIN}/python"
     PIPEXEC="${PYBIN}/pip"
