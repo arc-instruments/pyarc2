@@ -35,6 +35,7 @@ export PATH="${HOME}/.cargo/bin:${PATH}"
 export WHLPLAT=manylinux_2_28_x86_64
 
 cd /io/pyarc2
+mkdir -p target/wheels
 
 for PYVER in {311,312,313,314}; do
     PYBIN=/opt/python/cp${PYVER}-cp${PYVER}/bin
@@ -50,10 +51,12 @@ for PYVER in {311,312,313,314}; do
     PYTHON_SYS_EXECUTABLE=${PYEXEC} PYO3_PYTHON=${PYEXEC} \
             ${PYEXEC} -m poetry run maturin build \
             --release --interpreter ${PYEXEC} \
-            --skip-auditwheel --compatibility off --sdist
+            --out "$(pwd)/target/wheels" \
+            --skip-auditwheel --compatibility off \
+            --sdist
 done
 
-for whl in /io/pyarc2/target/wheels/*-linux_x86_64.whl; do
+for whl in /io/pyarc2/target/wheels/*-linux*x86_64.whl; do
     # make sure we target the correct platform when repairing
     auditwheel repair --plat $WHLPLAT "$whl" -w /io/pyarc2/target/wheels || true
 done
